@@ -1,5 +1,5 @@
 # Creador de Embeddings local, para ***Búsqueda Semántica***
-Crea embeddings usando el modelo de lenguale natural ***paraphrase-multilingual-MiniLM-L12-v2***, usando un WebService REST como interfaz.
+Crea embeddings usando el modelo de lenguaje natural ***paraphrase-multilingual-MiniLM-L12-v2***, usando un WebService REST como interfaz.
 
 ### En la ruta ***/process*** del WebService
 Recibe un POST, esperando 2 parámetros:
@@ -24,7 +24,7 @@ Cuando el **mode** es ***single***, el texto pasado en Base64, se limpia y se cr
     }
 ```
 
-Cuando el **mode** es ***chunks***, el texto pasado en Base64, se limpia, se separa en chunks y a cada chunk se le crea su embedding. Y se devuelve la respuesta con el formato:
+Cuando el **mode** es ***chunks***, el texto pasado en Base64, se limpia, se separa en chunks y a cada chunk se le crea su embedding. La respuesta devuelta tendría el formato siguiente:
 ```json
     {
         "mode": "chunks",
@@ -34,7 +34,7 @@ Cuando el **mode** es ***chunks***, el texto pasado en Base64, se limpia, se sep
 ```
 
 ### En la ruta ***/test*** del WebService
-Con una operación GET, se recibe en el parámetro **base64text**, un texto en Base64.
+Con una operación GET, se recibe en el parámetro **base64text**, un texto en *Base64*.
 Retornando una salida con el siguiente formato: 
 ```json
     {
@@ -52,7 +52,7 @@ Sirve para comprobar que el servicio esta trabajando.
 ---
 
 ## Modelo de Embeddings
-Se utiliza el modelo ***paraphrase-multilingual-MiniLM-L12-v2***, con él se generan vectores de 384 dimensiones. 
+Se utiliza el modelo ***paraphrase-multilingual-MiniLM-L12-v2***, que es de tamaño medio y funcional para texto en varios idiomas (inglés y español incluidos). Con este modelo se generan vectores de 384 dimensiones.
 
 Para evitar tener un esquema tan grande y previendo una indexación de millones de embeddings, se han reducido a 128 dimensiones, usando una ***matriz PCA de reducción***, previamente entrenada, incluida en el proyecto.
 
@@ -95,8 +95,8 @@ Si quieres tener la aplicación funcionando en tu entorno de desarrollo:
  5. Instala las dependencias: ``` pip install -r requirements.txt ``` 
  6. Ejecuta la aplicación : ``` python app.py ```
   
-## Para creación de Imágen para ***Docker***
-Usar el archivo **Dockerfile** en la raíz del pryecto, para creación y puesta en marcha del contenedor.
+## Para creación de Imagen para ***Docker***
+Usar el archivo **Dockerfile** en la raíz del proyecto, para creación y puesta en marcha del contenedor.
 
 Sigo en pruebas para perfeccionar este punto.
 
