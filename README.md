@@ -77,7 +77,7 @@ O bien, si quieres tener la aplicación funcionando en tu entorno de  desarrollo
          * En Windows : venv\Scripts\activate
          * En Linux   : source venv/bin/activate
  - 5.- Instala las dependencias: pip install -r requirements.txt
- - 6.- Ejecuta la aplicación : python app.pyd
+ - 6.- Ejecuta la aplicación : python app.py
   
  Nota: Si vas a crear la imagen de Docker, no crees el ambiente virtual. Sólo agregarías espacio innecesario a la imagen (incluiría todo el directorio venv-)
 
