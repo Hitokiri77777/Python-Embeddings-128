@@ -64,3 +64,17 @@ Y así analizando el texto de manera avanzada, se separa en oraciones.
 Se obtienen embeddings para cada oración, y usando operaciones de similitud entre esas oraciones consecutivas, se determinan si varias oraciones se pueden agrupar a un mismo chunk o se manejan en chunks separados. 
 
 También se aplica la regla de que cada chunk tenga a al menos 150 caracteres. Con esto, oraciones muy cortas, se agrupan de manera completa en otras.
+
+# Instalación
+
+Usar **Dockerfile** para creación y puesta en marcha del contenedor, 
+
+O bien, si quieres tener la aplicación funcionando en tu entorno de  desarrollo
+ - 1.- Clona el repositorio
+ - 2.- En tu terminal, cámbiate al folder creado
+ - 3.- Crea el ambiente virtual con python. Usar : python -m venv venv
+ - 4.- Actívalo, con : venv/scripts/activate  (en WIndows). En Linux es: source venv/bin/activate
+ - 5.- Instala las dependencias: pip install -r requirements.txt
+ - 6.- Ejecuta la aplicación : python app.pyd
+  
+ Nota: Si vas a crear la imagen de Docker, no crees el ambiente virtual. Sólo agregarías espacio innecesario a la imagen (incluiría todo el directorio venv-)
