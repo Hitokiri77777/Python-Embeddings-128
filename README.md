@@ -57,6 +57,8 @@ Se utiliza el modelo ***paraphrase-multilingual-MiniLM-L12-v2***, con él se gen
 Para evitar tener un esquema tan grande y previendo una indexación de millones de embeddings, se han reducido a 128 dimensiones, usando una ***matriz PCA de reducción***, previamente entrenada, incluida en el proyecto.
 
 ### Acerca de la "Limpieza del texto" recibido
+La limpieza del texto antes de trabajarlo, es indispensable para que el modelo de procesamiento de lenguaje natural **es_core_news_md**, cumpla adecuadamente su función al separar en oraciones.
+
 En este orden:
 - Se quita todo el contenido delimitado por '***[[RS-***'  '***-RS]]***'.
 - Se quitan todos los tokens : '***' (triple asterisco).
@@ -71,9 +73,6 @@ En este orden:
 - Se quitan todos los tokens : '***[[03]]***'.
 - Se quitan todos los tokens : '***[[05]]***'.
 - Se reemplazan todos los tokens : '```\r\n\r\n```' por '```\r\n```'.
-
-
-Estas operaciones son necesarias para que el modelo de procesamiento de lenguaje natural **es_core_news_md**, cumpla adecuadamente su función al separar en oraciones.
 
 
 ### Lógica de separación de texto largo en varios Chunks
