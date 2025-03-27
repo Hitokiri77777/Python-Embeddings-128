@@ -1,7 +1,7 @@
-# Creador de Embeddings local, para *** Búsqueda Semántica ***
-Crea embeddings usando el modelo de lenguale natural *** paraphrase-multilingual-MiniLM-L12-v2 ***, usando un WebService REST como interfaz.
+# Creador de Embeddings local, para ***Búsqueda Semántica***
+Crea embeddings usando el modelo de lenguale natural ***paraphrase-multilingual-MiniLM-L12-v2***, usando un WebService REST como interfaz.
 
-### En la ruta *** /process *** del WebService
+### En la ruta ***/process*** del WebService
 Recibe un POST, esperando 2 parámetros:
 - mode: Que puede ser (single | chunks)
 - textbase64: Sería el texto en Base64
@@ -33,7 +33,7 @@ Cuando el **mode** es ***chunks***, el texto pasado en Base64, se limpia, se sep
     }
 ```
 
-### En la ruta *** /test *** del WebService
+### En la ruta ***/test*** del WebService
 Con una operación GET, se recibe en el parámetro **base64text**, un texto en Base64.
 Retornando una salida con el siguiente formato: 
 ```json
@@ -46,15 +46,15 @@ Retornando una salida con el siguiente formato:
 Ejemplo de uso: ```http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=```
 
 
-### La ruta *** /health ***, igualmente en *** / *** del WebService
+### La ruta ***/health ***, igualmente en ***/ *** del WebService
 Sirve para comprobar que el servicio esta trabajando.
 
 ---
 
 ## Modelo de Embeddings
-Se utiliza el modelo ***paraphrase-multilingual-MiniLM-L12-v2***, con él se generan vectores de 384 dimensiones.
+Se utiliza el modelo ***paraphrase-multilingual-MiniLM-L12-v2***, con él se generan vectores de 384 dimensiones. 
 
-Para evitar tener un esquema tan grande, previendo una indexación de millones de embeddings, se han reducido a 128 dimensiones, usando una matriz PCA de reducción, previamente entrenada, incluida en el proyecto.
+Para evitar tener un esquema tan grande y previendo una indexación de millones de embeddings, se han reducido a 128 dimensiones, usando una ***matriz PCA de reducción***, previamente entrenada, incluida en el proyecto.
 
 ### Acerca de la "Limpieza del texto" recibido
 En este orden:
@@ -63,10 +63,10 @@ En este orden:
 - Se quitan todos los tokens : '***[[¡***'.
 - Se reemplazan todos los tokens : '***!]]***' por '```. ```'.
 - Se reemplazan todos los tokens : '***!]]***' por '```. ```'.
-- Se reemplazan todos los tokens : ```html '<br /><br />'```' por '```\r\n```'.
-- Se reemplazan todos los tokens : ```html '<br/><br/>'``` por '```\r\n```'.
-- Se reemplazan todos los tokens : ```html '<br/>'``` por '```\r\n```'.
-- Se reemplazan todos los tokens : ```html '<br />'``` por '```\r\n```'.
+- Se reemplazan todos los tokens : ``` '<br /><br />'```' por '```\r\n```'.
+- Se reemplazan todos los tokens : ``` '<br/><br/>'``` por '```\r\n```'.
+- Se reemplazan todos los tokens : ``` '<br/>'``` por '```\r\n```'.
+- Se reemplazan todos los tokens : ``` '<br />'``` por '```\r\n```'.
 - Se eliminan los TAGs de html,
 - Se quitan todos los tokens : '***[[03]]***'.
 - Se quitan todos los tokens : '***[[05]]***'.
@@ -102,6 +102,6 @@ Sigo en pruebas para perfeccionar este punto.
  ## Prueba básica de creación de Embedding
   - Usa: http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=
   - Con esto envias un texto corto en *Base64* sin usar *POST*.
-  - Verás el **Embedding** de resultado, con el texto recibdo ya limpio.
+  - Verás el ***Embedding*** de resultado, con el texto recibdo ya limpio.
   - Se usa *Base64*, porque el texto puede contener caracteres que pueden chocar con el esquema de una URL correcta. Aplica igual para el caso de los datos JSON recibidos en los *POST*.
-  - Es posible que textos muy largos en *Base64*, sobrepasen el límite para *GET* de *** /test ***.
+  - Es posible que textos muy largos en *Base64*, sobrepasen el límite para *GET* de ***/test***.
