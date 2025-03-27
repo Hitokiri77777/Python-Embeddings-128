@@ -15,6 +15,7 @@ Cuando el **mode** es single, el texto pasado en Base64, se limpia y se crea su 
         "text": Texto recibido y limpio,
         "embedding": arreglo de 128 números de punto flotante.
     }
+```
 
 Cuando el **mode** es chunks, el texto pasado en Base64, se limpia, se separa en chunks y a cada chunk se le crea su embedding. Y se devuelve la respuesta:
 ```json
@@ -22,17 +23,18 @@ Cuando el **mode** es chunks, el texto pasado en Base64, se limpia, se separa en
         "mode": "chunks",
         "chunks": Arreglo chunks
     }
+```
 
 #### En la ruta /test
 Se recibe en un GET, se recibe en el parámetro **base64text**, un texto en Base64.
 Retornando una salida con el siguiente formato: 
-``json
+```json
     {
         "mode": "test",
         "text": Texto recibido y limpio,
         "embedding": arreglo de 128 números de punto flotante.
     }
-
+```
 
 
 #### En la ruta /health y en /
