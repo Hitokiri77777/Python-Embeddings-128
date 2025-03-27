@@ -73,8 +73,17 @@ O bien, si quieres tener la aplicación funcionando en tu entorno de  desarrollo
  - 1.- Clona el repositorio
  - 2.- En tu terminal, cámbiate al folder creado
  - 3.- Crea el ambiente virtual con python. Usar : python -m venv venv
- - 4.- Actívalo, con : venv/scripts/activate  (en WIndows). En Linux es: source venv/bin/activate
+ - 4.- Actívalo
+         * En Windows : venv\Scripts\activate
+         * En Linux   : source venv/bin/activate
  - 5.- Instala las dependencias: pip install -r requirements.txt
  - 6.- Ejecuta la aplicación : python app.pyd
   
  Nota: Si vas a crear la imagen de Docker, no crees el ambiente virtual. Sólo agregarías espacio innecesario a la imagen (incluiría todo el directorio venv-)
+
+ ## Prueba básica de creación de Embedding
+  - Usa: http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=
+  - Con esto haces la prueba, enviando un texto corto en Base64.
+  - Verás el Embedding de resultado, con el texto ya limpio sin codificar.
+  * Es Base64, porque el texto puede contener caracteres que pueden chocar con el esquema de una URL correcta.
+  * Es posible que textos muy largos en Base64, sobrepasen el límite para GET.
