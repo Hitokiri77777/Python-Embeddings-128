@@ -71,7 +71,10 @@ En este orden:
 - Se quitan todos los tokens : '***[[03]]***'.
 - Se quitan todos los tokens : '***[[05]]***'.
 - Se reemplazan todos los tokens : '```\r\n\r\n```' por '```\r\n```'.
+
+
 Estas operaciones son necesarias para que el modelo de procesamiento de lenguaje natural **es_core_news_md**, cumpla adecuadamente su función al separar en oraciones.
+
 
 ### Lógica de separación de texto largo en varios Chunks
 Una vez limpio el texto y aplicando el modelo de procesamiento de lenguaje natural **es_core_news_md** con Spacy; se separa en oraciones y aplicando  ***Similaridad de Coseno*** con un umbral de **0.6** de similitud, se agrupan oraciones consecutivas en un mismo ***chunk***.
