@@ -94,7 +94,8 @@ Si quieres tener la aplicación funcionando en tu entorno de desarrollo:
     - En Linux   : ``` source venv/bin/activate ```
  5. Instala las dependencias: ``` pip install -r requirements.txt ``` 
  6. Ejecuta la aplicación : ``` python app.py ```
-  
+
+   
 ## Para creación de Imagen para ***Docker***
 Usar el archivo **Dockerfile** en la raíz del proyecto, para creación y puesta en marcha del contenedor.
 
@@ -107,6 +108,6 @@ Y quizas valdría la pena poner esta aplicación detrás de un servidor ***Nginx
  ## Prueba básica de creación de Embedding
   - Usa: http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=
   - Con esto envias un texto corto en *Base64* sin usar *POST*.
-  - Verás el ***Embedding*** de resultado, con el texto recibdo ya limpio.
+  - Verás el ***Embedding*** de resultado, con el texto recibido ya limpio.
   - Se usa *Base64*, porque el texto puede contener caracteres que pueden chocar con el esquema de una URL correcta. Aplica igual para el caso de los datos JSON recibidos en los *POST*.
   - Es posible que textos muy largos en *Base64*, sobrepasen el límite para *GET* de ***/test***.
