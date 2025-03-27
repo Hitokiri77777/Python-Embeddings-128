@@ -54,14 +54,14 @@ En este orde:
 - Se quitan todos los tokens : '[[¡'.
 - Se reemplazan todos los tokens : '!]]' por '. '.
 - Se reemplazan todos los tokens : ''''!]]' por '. '.
-- Se reemplazan todos los tokens : '```html<br /><br />' por ''''\n'.
-- Se reemplazan todos los tokens : '```html<br/><br/>' por ''''\n'.
-- Se reemplazan todos los tokens : '```html<br/>' por ''''\n'.
-- Se reemplazan todos los tokens : '```html<br />' por ''''\n'.
+- Se reemplazan todos los tokens : ```html '<br /><br />'```' por '\n'.
+- Se reemplazan todos los tokens : ```html '<br/><br/>'``` por '\n'.
+- Se reemplazan todos los tokens : ```html '<br/>'``` por '\n'.
+- Se reemplazan todos los tokens : ```html '<br />'``` por '\n'.
 - Se eliminan los TAGs de html
 - Se quitan todos los tokens : '[[03]]'.
 - Se quitan todos los tokens : '[[05]]'.
-- Se reemplazan todos los tokens : ''''\r\n\r\n' por ''''\r\n'.
+- Se reemplazan todos los tokens : ''' '\r\n\r\n' ``` por ``` '\r\n' ```.
 
 ### Separación de texto largo en Chunks
 Una vez limpio el texto, y aplicando el modelo de procesamiento de lenguaje natural **es_core_news_md** con Spacy.
@@ -78,12 +78,12 @@ Usar **Dockerfile** para creación y puesta en marcha del contenedor,
 O bien, si quieres tener la aplicación funcionando en tu entorno de  desarrollo
  - 1.- Clona el repositorio
  - 2.- En tu terminal, cámbiate al folder creado
- - 3.- Crea el ambiente virtual con python. Usar : python -m venv venv
+ - 3.- Crea el ambiente virtual con python. Usar : ``` python -m venv venv ```
  - 4.- Actívalo
-         * En Windows : venv\Scripts\activate
-         * En Linux   : source venv/bin/activate
+         * En Windows : ``` venv\Scripts\activate ```
+         * En Linux   : ``` source venv/bin/activate ```
  - 5.- Instala las dependencias: pip install -r requirements.txt
- - 6.- Ejecuta la aplicación : python app.py
+ - 6.- Ejecuta la aplicación : ``` python app.py ```
   
  Nota: Si vas a crear la imagen de Docker, no crees el ambiente virtual. Sólo agregarías espacio innecesario a la imagen (incluiría todo el directorio venv-)
 
