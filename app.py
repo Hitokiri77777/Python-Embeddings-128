@@ -63,6 +63,7 @@ def process_text():
 
 # Ruta para verificar que el servicio está activo
 @app.route('/health', methods=['GET'])
+@app.route('/', methods=['GET'])
 def health_check():
     return jsonify({"status": "ok", "message": "Servicio funcionando correctamente"})
 
