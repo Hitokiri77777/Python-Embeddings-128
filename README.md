@@ -100,6 +100,8 @@ Usar el archivo **Dockerfile** en la raíz del pryecto, para creación y puesta 
 
 Sigo en pruebas para perfeccionar este punto.
 
+Y quizas valdría la pena poner esta aplicación detrás de un servidor ***Nginx*** para mejorar rendimiento, seguridad y escalabilidad. Esto sigue pendiente.
+
 ***NOTA:*** Si vas a crear la imagen de Docker, que no sea desde el folder usado para una instalación de desarrollo. Sólo agregarías espacio innecesario a la imagen (incluiría todo el subdirectorio /venv/).
 
  ## Prueba básica de creación de Embedding
