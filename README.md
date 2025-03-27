@@ -1,7 +1,7 @@
 # Creador de Embeddings local
 Crea embeddings usando el modelo de lenguale natural ***paraphrase-multilingual-MiniLM-L12-v2***, usando un WebService REST como interfaz.
 
-### En la ruta ***/process*** del WebService
+### En la ruta *** /process *** del WebService
 Recibe un POST, esperando 2 parámetros:
 - mode: Que puede ser (single | chunks)
 - textbase64: Sería el texto en Base64
@@ -33,7 +33,7 @@ Cuando el **mode** es ***chunks***, el texto pasado en Base64, se limpia, se sep
     }
 ```
 
-### En la ruta ***/test*** del WebService
+### En la ruta *** /test *** del WebService
 Con una operación GET, se recibe en el parámetro **base64text**, un texto en Base64.
 Retornando una salida con el siguiente formato: 
 ```json
@@ -46,11 +46,12 @@ Retornando una salida con el siguiente formato:
 Ejemplo de uso: ```http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=```
 
 
-### La ruta ***/health***, igualmente en ***/*** del WebService
+### La ruta *** /health ***, igualmente en *** / *** del WebService
 Sirve para comprobar que el servicio esta trabajando.
 
+---
 
-### Modelo de Embeddings
+## Modelo de Embeddings
 Se utiliza el modelo ***paraphrase-multilingual-MiniLM-L12-v2***, con él se generan vectores de 384 dimensiones.
 
 Para evitar tener un esquema tan grande, previendo una indexación de millones de embeddings, se han reducido a 128 dimensiones, usando una matriz PCA de reducción, previamente entrenada, incluida en el proyecto.
@@ -78,25 +79,29 @@ En detalle, se obtienen embeddings para cada oración, y usando operaciones de s
 
 También se aplica la regla de que cada chunk tenga a al menos 150 caracteres. Con esto, oraciones muy cortas, se agrupan en otras.
 
+---
+
 ## Instalación para Desarrollo
 Si quieres tener la aplicación funcionando en tu entorno de  desarrollo
- - 1.- Clona el repositorio
- - 2.- En tu terminal, cámbiate al folder creado
- - 3.- Crea el ambiente virtual con python. Usar : ``` python -m venv venv ```
- - 4.- Activa el ambiente
+ 1. Clona el repositorio
+ 2. En tu terminal, cámbiate al folder creado
+ 3. Crea el ambiente virtual con python. Usar : ``` python -m venv venv ```
+ 4. Activa el ambiente
     - En Windows : ``` venv\Scripts\activate ```
     - En Linux   : ``` source venv/bin/activate ```
- - 5.- Instala las dependencias: ``` pip install -r requirements.txt ``` 
- - 6.- Ejecuta la aplicación : ``` python app.py ```
+ 5. Instala las dependencias: ``` pip install -r requirements.txt ``` 
+ 6. Ejecuta la aplicación : ``` python app.py ```
   
-## Para creación de Imágen para Docker
-Usar **Dockerfile** para creación y puesta en marcha del contenedor. Sigo en pruebas para perfeccionar este punto.
+## Para creación de Imágen para ***Docker***
+Usar el archivo **Dockerfile** en la raíz del pryecto, para creación y puesta en marcha del contenedor.
 
- Si vas a crear la imagen de Docker, que no sea desde el folder usado para una instalación de desarrollo. Sólo agregarías espacio innecesario a la imagen (incluiría todo el subdirectorio /venv/).
+Sigo en pruebas para perfeccionar este punto.
+
+***NOTA:*** Si vas a crear la imagen de Docker, que no sea desde el folder usado para una instalación de desarrollo. Sólo agregarías espacio innecesario a la imagen (incluiría todo el subdirectorio /venv/).
 
  ## Prueba básica de creación de Embedding
   - Usa: http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=
-  - Con esto envias un texto corto en Base64 sin usar POST.
-  - Verás el **Embedding** de resultado, con el texto recibdo, ya limpio.
-  - Se usa *Base64*, porque el texto puede contener caracteres que pueden chocar con el esquema de una URL correcta.
-  - Es posible que textos muy largos en *Base64*, sobrepasen el límite para GET.
+  - Con esto envias un texto corto en *Base64* sin usar *POST*.
+  - Verás el **Embedding** de resultado, con el texto recibdo ya limpio.
+  - Se usa *Base64*, porque el texto puede contener caracteres que pueden chocar con el esquema de una URL correcta. Aplica igual para el caso de los datos JSON recibidos en los *POST*.
+  - Es posible que textos muy largos en *Base64*, sobrepasen el límite para *GET* de *** /test ***.
