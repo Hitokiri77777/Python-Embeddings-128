@@ -1,5 +1,5 @@
 # Creador de Embeddings local
-Crea embeddings usando el modelo de lenguale natural **paraphrase-multilingual-MiniLM-L12-v2** de manera local (no lo carga desde web).
+Crea embeddings usando el modelo de lenguale natural **paraphrase-multilingual-MiniLM-L12-v2**.
 
 Se accesa desde un WebService REST
 #### En la ruta /process
@@ -8,8 +8,8 @@ Recibe un POST, esperando 2 parámetros
 - textbase64 : Sería el texto en Base64
 
 
-Cuando el **mode** es single, el texto pasado en Base64, se limpia y se crea su embedding.
-Y se devuelve la respuesta:
+Cuando el **mode** es single, el texto pasado en Base64, se limpia y se crea su embedding. Y se devuelve la respuesta:
+    ```json
     {
         "mode": "single",
         "text": Texto recibido y limpio,
@@ -17,6 +17,7 @@ Y se devuelve la respuesta:
     }
 
 Cuando el **mode** es chunks, el texto pasado en Base64, se limpia, se separa en chunks y a cada chunk se le crea su embedding. Y se devuelve la respuesta:
+    ```json
     {
         "mode": "chunks",
         "chunks": Arreglo chunks
@@ -25,11 +26,14 @@ Cuando el **mode** es chunks, el texto pasado en Base64, se limpia, se separa en
 #### En la ruta /test
 Se recibe en un GET, se recibe en el parámetro **base64text**, un texto en Base64.
 Retornando una salida con el siguiente formato: 
+    ```json
     {
         "mode": "test",
         "text": Texto recibido y limpio,
         "embedding": arreglo de 128 números de punto flotante.
     }
+
+
 
 #### En la ruta /health y en /
 Sirve para comprobar que el servicio esta trabajando.
@@ -47,15 +51,15 @@ En este orde:
 - Se quitan todos los tokens : '***' | (triple asterisco).
 - Se quitan todos los tokens : '[[¡'.
 - Se reemplazan todos los tokens : '!]]' por '. '.
-- Se reemplazan todos los tokens : '!]]' por '. '.
-- Se reemplazan todos los tokens : '<br /><br />' por '\n'.
-- Se reemplazan todos los tokens : '<br/><br/>' por '\n'.
-- Se reemplazan todos los tokens : '<br/>' por '\n'.
-- Se reemplazan todos los tokens : '<br />' por '\n'.
+- Se reemplazan todos los tokens : ''''!]]' por '. '.
+- Se reemplazan todos los tokens : '```html<br /><br />' por ''''\n'.
+- Se reemplazan todos los tokens : '```html<br/><br/>' por ''''\n'.
+- Se reemplazan todos los tokens : '```html<br/>' por ''''\n'.
+- Se reemplazan todos los tokens : '```html<br />' por ''''\n'.
 - Se eliminan los TAGs de html
 - Se quitan todos los tokens : '[[03]]'.
 - Se quitan todos los tokens : '[[05]]'.
-- Se reemplazan todos los tokens : '\r\n\r\n' por '\r\n'.
+- Se reemplazan todos los tokens : ''''\r\n\r\n' por ''''\r\n'.
 
 ### Separación de texto largo en Chunks
 Una vez limpio el texto, y aplicando el modelo de procesamiento de lenguaje natural **es_core_news_md** con Spacy.
