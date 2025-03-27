@@ -9,7 +9,7 @@ Recibe un POST, esperando 2 parámetros
 
 
 Cuando el **mode** es single, el texto pasado en Base64, se limpia y se crea su embedding. Y se devuelve la respuesta:
-    ```json
+```json
     {
         "mode": "single",
         "text": Texto recibido y limpio,
@@ -17,7 +17,7 @@ Cuando el **mode** es single, el texto pasado en Base64, se limpia y se crea su 
     }
 
 Cuando el **mode** es chunks, el texto pasado en Base64, se limpia, se separa en chunks y a cada chunk se le crea su embedding. Y se devuelve la respuesta:
-    ```json
+```json
     {
         "mode": "chunks",
         "chunks": Arreglo chunks
@@ -26,7 +26,7 @@ Cuando el **mode** es chunks, el texto pasado en Base64, se limpia, se separa en
 #### En la ruta /test
 Se recibe en un GET, se recibe en el parámetro **base64text**, un texto en Base64.
 Retornando una salida con el siguiente formato: 
-    ```json
+``json
     {
         "mode": "test",
         "text": Texto recibido y limpio,
