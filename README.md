@@ -1,5 +1,5 @@
-# Creador de Embeddings local
-Crea embeddings usando el modelo de lenguale natural ***paraphrase-multilingual-MiniLM-L12-v2***, usando un WebService REST como interfaz.
+# Creador de Embeddings local, para *** Búsqueda Semántica ***
+Crea embeddings usando el modelo de lenguale natural *** paraphrase-multilingual-MiniLM-L12-v2 ***, usando un WebService REST como interfaz.
 
 ### En la ruta *** /process *** del WebService
 Recibe un POST, esperando 2 parámetros:
@@ -77,16 +77,16 @@ Una vez limpio el texto y aplicando el modelo de procesamiento de lenguaje natur
 
 En detalle, se obtienen embeddings para cada oración, y usando operaciones de similitud entre esas oraciones consecutivas, se determinan si varias oraciones se pueden agrupar a un mismo chunk o se manejan en chunks separados. 
 
-También se aplica la regla de que cada chunk tenga a al menos 150 caracteres. Con esto, oraciones muy cortas, se agrupan en otras.
+También se aplica la regla de que cada chunk tenga a al menos 150 caracteres. Con esto, oraciones muy cortas se agrupan en otras.
 
 ---
 
 ## Instalación para Desarrollo
-Si quieres tener la aplicación funcionando en tu entorno de  desarrollo
- 1. Clona el repositorio
- 2. En tu terminal, cámbiate al folder creado
+Si quieres tener la aplicación funcionando en tu entorno de desarrollo:
+ 1. Clona el repositorio : ```git clone https://github.com/Hitokiri77777/Python-Embeddings-128.git```
+ 2. En tu terminal, cámbiate al folder creado.
  3. Crea el ambiente virtual con python. Usar : ``` python -m venv venv ```
- 4. Activa el ambiente
+ 4. Activa el ambiente virtual:
     - En Windows : ``` venv\Scripts\activate ```
     - En Linux   : ``` source venv/bin/activate ```
  5. Instala las dependencias: ``` pip install -r requirements.txt ``` 
