@@ -1,4 +1,4 @@
-# Creador de Embeddings local, para ***Búsqueda Semántica***
+# Creador de Embeddings local para ***Búsqueda Semántica***
 Crea embeddings usando el modelo de lenguaje natural ***paraphrase-multilingual-MiniLM-L12-v2***, usando un WebService REST como interfaz.
 
 ### En la ruta ***/process*** del WebService
@@ -94,6 +94,9 @@ Si quieres tener la aplicación funcionando en tu entorno de desarrollo:
     - En Linux   : ``` source venv/bin/activate ```
  5. Instala las dependencias: ``` pip install -r requirements.txt ``` 
  6. Ejecuta la aplicación : ``` python app.py ```
+
+- Ver prueba básica de creación de embedding, en la última sección del documento.
+- Con la demostración exitosa de la prueba. Puedes ya hacer *POST* a la ruta **/process** para trabajar. 
 
 ---
 
