@@ -99,7 +99,13 @@ Si quieres tener la aplicación funcionando en tu entorno de desarrollo:
 ## Para creación de Imagen para ***Docker***
 Usar el archivo **Dockerfile** en la raíz del proyecto, para creación y puesta en marcha del contenedor.
 
-Sigo en pruebas para perfeccionar este punto.
+1. Teniendo Docker funcionando. Hacer : ```docker build -t python_embeddings .```
+   para crear la imagen.
+2. Obten el ID de la imagen creada, listando las imagenes existentes con : ```docker images```
+3. Correla, suponiendo que el ID es 562469e4e257 : ```docker run -p 5000:5000 562469e4e257```
+   COn esto, el puerto 5000 de imagen, se mapeará al también 5000 de tu máquina
+4. Ahora si, podrías hacer la prueba: ```http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=```
+
 
 Y quizas valdría la pena poner esta aplicación detrás de un servidor ***Nginx*** para mejorar rendimiento, seguridad y escalabilidad. Esto sigue pendiente.
 
