@@ -95,9 +95,10 @@ Si quieres tener la aplicación funcionando en tu entorno de desarrollo:
  5. Instala las dependencias: ``` pip install -r requirements.txt ``` 
  6. Ejecuta la aplicación : ``` python app.py ```
 
-   
+---
+
 ## Para creación de Imagen para ***Docker***
-Usar el archivo **Dockerfile** en la raíz del proyecto, para creación y puesta en marcha del contenedor.
+Usar el archivo **Dockerfile** en la raíz del proyecto, para creación y puesta en marcha del contenedor. 
 
 1. Teniendo Docker funcionando. Hacer : ```docker build -t python_embeddings .```
    para crear la imagen.
@@ -106,8 +107,90 @@ Usar el archivo **Dockerfile** en la raíz del proyecto, para creación y puesta
    COn esto, el puerto 5000 de imagen, se mapeará al también 5000 de tu máquina
 4. Ahora si, podrías hacer la prueba: ```http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=```
 
+Se crearía una imagen de ***2.1GB*** ya funcional.
 
-Y quizas valdría la pena poner esta aplicación detrás de un servidor ***Nginx*** para mejorar rendimiento, seguridad y escalabilidad. Esto sigue pendiente.
+# Sugerencia para llevarlo a Producción
+Puedes poner esta aplicación detrás de un servidor ***Nginx*** para mejorar rendimiento, seguridad y escalabilidad.
+
+Para hacerlo, puedes usar el archivo ***docker-compose.yml***. Esto crearía el flujo siguiente:
+1. El usuario accede a http://localhost/.
+2. Nginx recibe la solicitud en el puerto 80.
+3. Nginx reenvía la solicitud al contenedor de Flask en backend:5000.
+4. Flask procesa la petición y devuelve la respuesta a Nginx.
+5. Nginx envía la respuesta final al usuario.
+
+Tener una aplicación Flask detrás de un servidor Nginx es una práctica recomendada en entornos de producción porque mejora la seguridad, el rendimiento y la escalabilidad.
+
+# Problemas de ejecutar Flask directamente
+Si se ejecuta Flask de forma nativa con python app.py nos enfrentaríamos a varias limitaciones:
+
+- Flask no es eficiente manejando múltiples conexiones → Puede procesar solo un número limitado de solicitudes simultáneamente.
+- No maneja archivos estáticos eficientemente → Sirviendo imágenes, CSS o JS desde Flask, el rendimiento será pobre (No es el caso de nuestra aplicación).
+- No soporta balanceo de carga → No puedes escalar a múltiples instancias fácilmente.
+- No maneja HTTPS nativamente → No puedes configurar certificados SSL directamente en Flask.
+
+# ¿Por qué usar Nginx como proxy reverso?
+Nginx es un servidor web ligero y eficiente que actúa como intermediario entre los clientes (navegador, API, etc.) y la aplicación Flask.
+
+- Mejora el rendimiento → Puede manejar miles de conexiones concurrentes.
+- Maneja archivos estáticos → Como imágenes, CSS y JS sin cargar Flask innecesariamente.
+- Balanceo de carga → Si usas múltiples instancias de Flask, distribuye las peticiones.
+- Soporte SSL/TLS → Se encarga de manejar certificados HTTPS.
+- Protege contra ataques → Como DDoS y accesos no autorizados.
+
+# Beneficios en producción
+- Optimización de tráfico → Nginx maneja archivos estáticos, evitando que Flask se sobrecargue.
+- Seguridad → Evita que los clientes accedan directamente a Flask.
+- Escalabilidad → Puedes agregar múltiples instancias de Flask detrás de Nginx.
+- HTTPS fácil → Puedes configurar un certificado SSL en Nginx sin tocar Flask. 
+
+# Si al final solo hay una aplicación Flask ejecutándose, ¿por qué Nginx mejora el rendimiento? 
+La clave está en cómo se manejan las conexiones y la distribución de carga.
+
+Flask maneja mal muchas conexiones concurrentes
+Flask, por sí solo, no está diseñado para manejar muchas conexiones al mismo tiempo, porque usa un servidor de desarrollo interno que:
+
+- No es multihilo eficiente → No maneja múltiples solicitudes en paralelo de manera efectiva.
+- Bloquea peticiones → Cada petición espera a que se termine la anterior antes de ser atendida.
+- Se satura rápido → No puede manejar miles de conexiones sin colapsar.
+
+# ¿Cómo ayuda Nginx a mejorar el rendimiento?
+Nginx actúa como un buffer inteligente entre los clientes y Flask, mejorando el rendimiento por varios motivos:
+
+1. Nginx maneja muchas conexiones simultáneas eficientemente
+Nginx usa un modelo asíncrono basado en eventos, en lugar de crear un nuevo proceso/hilo para cada solicitud. Esto le permite gestionar miles de conexiones sin consumir muchos recursos.
+
+📌 Ejemplo práctico:
+
+Sin Nginx: Flask recibe 1000 peticiones y solo puede atender 5-10 a la vez. Las demás quedan bloqueadas.
+
+Con Nginx: Nginx recibe 1000 peticiones y distribuye las solicitudes a Flask de manera controlada. Mientras Flask procesa una, Nginx retiene las demás sin bloquearlas.
+
+2. Nginx maneja archivos estáticos sin pasar por Flask
+Si sirves archivos como imágenes, CSS o JS con Flask, cada solicitud consume recursos de Flask innecesariamente.
+🚀 Con Nginx, esos archivos se sirven directamente sin afectar el rendimiento de Flask.
+
+📌 Ejemplo práctico:
+
+Sin Nginx: Flask recibe 1000 solicitudes, incluyendo archivos estáticos. Se satura.
+
+Con Nginx: Nginx atiende las solicitudes de archivos estáticos y solo pasa las solicitudes de API a Flask.
+
+3. Nginx hace balanceo de carga (opcional)
+Si tu aplicación Flask crece, puedes correr múltiples instancias de Flask y usar Nginx para distribuir la carga.
+
+📌 Ejemplo práctico:
+
+Sin Nginx: Una sola instancia de Flask se satura con 1000 usuarios.
+
+Con Nginx + 3 Flask: Nginx distribuye las solicitudes entre 3 instancias, mejorando la escalabilidad.
+
+4. Nginx mantiene conexiones abiertas y usa caché
+Cuando un cliente accede a Flask directamente, cada nueva conexión se abre y cierra.
+📌 Con Nginx, las conexiones pueden mantenerse abiertas y reutilizarse, reduciendo la latencia.
+
+🔥 Conclusión:
+Nginx no hace que Flask procese más rápido, pero evita que Flask se sature y distribuye mejor las solicitudes. Por eso es fundamental para producción. 
 
 ***NOTA:*** Si vas a crear la imagen de Docker, que no sea desde el folder usado para una instalación de desarrollo. Sólo agregarías espacio innecesario a la imagen (incluiría todo el subdirectorio /venv/).
 
