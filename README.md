@@ -106,11 +106,18 @@ Usar el archivo **Dockerfile** en la raíz del proyecto, para creación y puesta
 1. Teniendo Docker instalado. Hacer : ```docker build -t python_embeddings .```
    para crear la imagen.
 2. Obten el ID de la imagen creada, listando las imagenes existentes con : ```docker images```
-3. Correla, suponiendo que el ID es 562469e4e257 : ```docker run -p 5000:5000 562469e4e257```
-   Con esto, el puerto 5000 de imagen, se mapeará al también 5000 de tu máquina
-4. Ahora si, podrías hacer la prueba: ```http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=```
+3. Córrela, suponiendo que el ID es 562469e4e257 : ```docker run -p 5000:5000 562469e4e257```
+   Con esto, el puerto 5000 de la imagen, se mapeará al también 5000 de tu máquina.
+4. Ahora si podrías hacer la prueba: ```http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=```
 
 Se crearía una imagen de ***2.1GB*** ya funcional.
+
+***Nota Importante:*** Recuerda que la imagen de la aplicación Flask, debe cargar el modelo *"paraphrase-multilingual-MiniLM-L12-v2"* desde internet en cada arranque. Ver el Log, para revisar cuando ya esta lista para trabajar.
+
+Esto se puede evitar, descargando dicho modelo a un directorio, y hacer que forme parte de la imagen. Y modificar también el código fuente para cargarlo desde disco.
+
+Decidí dejarlo de esta forma, para no tener que agregar ese directorio en el repositorio GIT.
+
 
 ### Sugerencia para llevarlo a Producción
 Puedes poner esta aplicación detrás de un servidor ***Nginx*** para mejorar rendimiento, seguridad y escalabilidad.
@@ -121,6 +128,9 @@ Para hacerlo, puedes usar el archivo ***docker-compose.yml***. Esto crearía el 
 3. Nginx reenvía la solicitud al contenedor de Flask en backend:5000.
 4. Flask procesa la petición y devuelve la respuesta a Nginx.
 5. Nginx envía la respuesta final al usuario.
+
+Utilizarías el comando ```docker-compose up --build -d```
+- Esto crearía las 2 imágenes, una para la App de Flask, nuestra app. Y otra con un linux Alpine süper ligero, con un servidor de Nginx. Y un "puente de red" para hacer que las dos imágenes trabajen en conjunto.
 
 Tener una aplicación Flask detrás de un servidor Nginx es una práctica recomendada en entornos de producción porque mejora la seguridad, el rendimiento y la escalabilidad.
 
