@@ -43,9 +43,14 @@ class ChunksAndEmbeddings:
         cleaned_text = cleaned_text.replace("[[03]]", "")
         # Normalizar comillas (reemplazar comillas tipográficas por rectas)
         cleaned_text = cleaned_text.replace('"', '"').replace('"', '"')  # Comillas dobles
-        cleaned_text = cleaned_text.replace(''', "'").replace(''', "'")  # Comillas simples        
+        cleaned_text = cleaned_text.replace(''', "'").replace(''', "'")  # Comillas simples
+        cleaned_text = cleaned_text.replace('"', "'")                    # Reemplazando comillas dobles por simples
         cleaned_text = cleaned_text.replace("\\r\\n", os.linesep)
         cleaned_text = cleaned_text.replace("\\", "")
+        
+        # Limpiar espacios extra y saltos de línea
+        cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()
+        return cleaned_text
     
     def GetChunks(self, Text):
         # Limpiamos texto
