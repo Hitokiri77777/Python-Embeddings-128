@@ -38,10 +38,14 @@ class ChunksAndEmbeddings:
         cleaned_text = cleaned_text.replace("<br/>", os.linesep)
         cleaned_text = cleaned_text.replace("<br />", os.linesep)
         soup         = BeautifulSoup(cleaned_text, "html.parser")
-        cleaned_text = soup.get_text().replace("[[03]]", "")
-        cleaned_text = soup.get_text().replace("[[05]]", "")
-        cleaned_text = cleaned_text.replace("\r\n\r\n", "\r\n")
-        return cleaned_text
+        cleaned_text = soup.get_text(separator=' ', strip=True)
+        cleaned_text = cleaned_text.replace("[[05]]", "")
+        cleaned_text = cleaned_text.replace("[[03]]", "")
+        # Normalizar comillas (reemplazar comillas tipográficas por rectas)
+        cleaned_text = cleaned_text.replace('"', '"').replace('"', '"')  # Comillas dobles
+        cleaned_text = cleaned_text.replace(''', "'").replace(''', "'")  # Comillas simples        
+        cleaned_text = cleaned_text.replace("\\r\\n", os.linesep)
+        cleaned_text = cleaned_text.replace("\\", "")
     
     def GetChunks(self, Text):
         # Limpiamos texto
@@ -87,6 +91,9 @@ class ChunksAndEmbeddings:
         if current_chunk:
             chunks.append(" ".join(current_chunk))
 
+        #Limpia los brincos de linea iniciales de cada chunk
+        for i in range(len(chunks) - 1):
+            chunks[i] = re.sub(r'^[\\r\\n]+', '', chunks[i]).strip()
         return chunks
 
     def reduce_embeddings_With_PCA_matrix(self, embeddings):
