@@ -65,13 +65,14 @@ En este orden:
 - Se quitan todos los tokens : '***[[¡***'.
 - Se reemplazan todos los tokens : '***!]]***' por '```. ```'.
 - Se reemplazan todos los tokens : '***!]]***' por '```. ```'.
-- Se reemplazan todos los tokens : ``` '<br /><br />'```' por '```\r\n```'.
-- Se reemplazan todos los tokens : ``` '<br/><br/>'``` por '```\r\n```'.
-- Se reemplazan todos los tokens : ``` '<br/>'``` por '```\r\n```'.
-- Se reemplazan todos los tokens : ``` '<br />'``` por '```\r\n```'.
-- Se eliminan los TAGs de html,
+- Se reemplazan todos los tokens : ``` '<br /><br />'```' por '```\n```'.
+- Se reemplazan todos los tokens : ``` '<br/><br/>'``` por '```\n```'.
+- Se reemplazan todos los tokens : ``` '<br/>'``` por '```\n```'.
+- Se reemplazan todos los tokens : ``` '<br />'``` por '```\n```'.
+- Se eliminan el resto de TAGs de html.
 - Se quitan todos los tokens : '***[[03]]***'.
 - Se quitan todos los tokens : '***[[05]]***'.
+- Normaliza diferentes tipos de comillas dobles y simples a sólo tener las simples básicas.
 - Se reemplazan todos los tokens : '```\r\n\r\n```' por '```\r\n```'.
 
 
@@ -114,9 +115,7 @@ Se crearía una imagen de ***2.1GB*** ya funcional.
 
 ***Nota Importante:*** Recuerda que la imagen de la aplicación Flask, debe cargar el modelo *"paraphrase-multilingual-MiniLM-L12-v2"* desde internet en cada arranque. Ver el Log, para revisar cuando ya esta lista para trabajar.
 
-Esto se puede evitar, descargando dicho modelo a un directorio, y hacer que forme parte de la imagen. Y modificar también el código fuente para cargarlo desde disco.
-
-Decidí dejarlo de esta forma, para no tener que agregar ese directorio en el repositorio GIT.
+Esto se puede evitar, descargando dicho modelo a un directorio, y hacer que forme parte de la imagen. Y modificar también el código fuente para cargarlo desde disco. Decidí dejarlo de esa forma, para no tener que agregar ese directorio en el repositorio GIT. Son unos 400 MB.
 
 
 ### Sugerencia para llevarlo a Producción
@@ -130,7 +129,7 @@ Para hacerlo, puedes usar el archivo ***docker-compose.yml***. Esto crearía el 
 5. Nginx envía la respuesta final al usuario.
 
 Utilizarías el comando ```docker-compose up --build -d```
-- Esto crearía las 2 imágenes, una para la App de Flask, nuestra app. Y otra con un linux Alpine süper ligero, con un servidor de Nginx. Y un "puente de red" para hacer que las dos imágenes trabajen en conjunto.
+- Esto crearía las 2 imágenes, una para la App de Flask, nuestra app. Y otra con un linux Alpine súper ligero, con un servidor de Nginx. Y un "puente de red" para hacer que las dos imágenes trabajen en conjunto.
 
 Tener una aplicación Flask detrás de un servidor Nginx es una práctica recomendada en entornos de producción porque mejora la seguridad, el rendimiento y la escalabilidad.
 
@@ -219,7 +218,8 @@ A diferencia de las pruebas anteriores, aqui no se indica el puerto 5000.
 
  ## Prueba básica de creación de Embedding
   - Usa: http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=
-  - Con esto envias un texto corto en *Base64* sin usar *POST*.
+    ó, cuando ya hay un servidor Nginx: http://127.0.0.1/test?base64text=SG9sYSBNdW5kbyE=
+  - Con esto envías un texto corto en *Base64* sin usar *POST*.
   - Verás el ***Embedding*** de resultado, con el texto recibido ya limpio.
-  - Se usa *Base64*, porque el texto puede contener caracteres que pueden chocar con el esquema de una URL correcta. Aplica igual para el caso de los datos JSON recibidos en los *POST*.
-  - Es posible que textos muy largos en *Base64*, sobrepasen el límite para *GET* de ***/test***.
+  - Se usa *Base64*, porque el texto puede contener caracteres que pueden chocar con el esquema de una URL correcta o de un JSON bien formado. Aplica igual para el caso de los datos JSON recibidos en los *POST*.
+  - Es posible que textos muy largos en *Base64*, sobrepasen el límite para *GET* de ***/test***, por si vas a probar textos propios en sea ruta **/test**.
