@@ -23,5 +23,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Descargar el modelo de spaCy
 RUN python -m spacy download es_core_news_md
 
+# Descargar el modelo de spaCy
+RUN python -m spacy download es_core_news_md
+
+# Instalamos el paquete Waitress
+RUN pip install --no-cache-dir waitress
+
 # Ejecutar la aplicación Flask
-CMD ["python", "app.py"]
+#CMD ["python", "app.py"]
+#Pero mejoramos a servirla no con flask, sino con "Waitress" que es más robusto:
+CMD ["waitress-serve", "--host=0.0.0.0", "--port=5000", "app:app"]
