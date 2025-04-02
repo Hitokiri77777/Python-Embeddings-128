@@ -96,6 +96,11 @@ Si quieres tener la aplicación funcionando en tu entorno de desarrollo:
  5. Instala las dependencias: ``` pip install -r requirements.txt ``` 
  6. Ejecuta la aplicación : ``` python app.py ```
 
+ * Podría usarse un servidor como "waitress" de Python, para mejorar respuestas de la aplicación flask
+   - Instala el paquete ```pip install waitress``` con el ambiente activado
+   - Sirve la aplicación de manera más eficiente con un modelo multihilo con esto:
+       ```waitress-serve --host=0.0.0.0 --port=5000 app:app```
+
 - Ver prueba básica de creación de embedding en la última sección del documento.
 - Con la demostración exitosa de la prueba; puedes ya hacer *POST* a la ruta **/process** para trabajar. 
 
