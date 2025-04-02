@@ -142,7 +142,7 @@ Tener una aplicación Flask detrás de un servidor Nginx es una práctica recome
 ### Problemas de ejecutar Flask directamente
 Si se ejecuta Flask de forma nativa con python app.py nos enfrentaríamos a varias limitaciones:
 
-- Flask no es eficiente manejando múltiples conexiones → Puede procesar solo un número limitado de solicitudes simultáneamente.
+- Flask no es eficiente manejando múltiples conexiones → Puede procesar sólo un número limitado de solicitudes simultáneamente.
 - No maneja archivos estáticos eficientemente → Sirviendo imágenes, CSS o JS desde Flask, el rendimiento será pobre (No es el caso de nuestra aplicación).
 - No soporta balanceo de carga → No puedes escalar a múltiples instancias fácilmente.
 - No maneja HTTPS nativamente → No puedes configurar certificados SSL directamente en Flask.
@@ -166,13 +166,8 @@ Nginx es un servidor web ligero y eficiente que actúa como intermediario entre 
 La clave está en cómo se manejan las conexiones y la distribución de carga.
 
 Flask maneja mal muchas conexiones concurrentes
-Flask, por sí solo, no está diseñado para manejar muchas conexiones al mismo tiempo, porque usa un servidor de desarrollo interno que:
+Flask, por sí solo, no está diseñado para manejar muchas conexiones al mismo tiempo, porque usa un servidor de desarrollo interno.
 
-- No es multihilo eficiente → No maneja múltiples solicitudes en paralelo de manera efectiva.
-- Bloquea peticiones → Cada petición espera a que se termine la anterior antes de ser atendida.
-- Se satura rápido → No puede manejar miles de conexiones sin colapsar.
-
-### ¿Cómo ayuda Nginx a mejorar el rendimiento?
 Nginx actúa como un buffer inteligente entre los clientes y Flask, mejorando el rendimiento por varios motivos:
 
 1. Nginx maneja muchas conexiones simultáneas eficientemente
@@ -224,7 +219,7 @@ A diferencia de las pruebas anteriores, aqui no se indica el puerto 5000.
 
  ## Prueba básica de creación de Embedding
   - Usa: http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=
-    ó, cuando ya hay un servidor Nginx: http://127.0.0.1/test?base64text=SG9sYSBNdW5kbyE=
+    ó, cuando ya hay un servidor Nginx al frente: http://127.0.0.1/test?base64text=SG9sYSBNdW5kbyE=
   - Con esto envías un texto corto en *Base64* sin usar *POST*.
   - Verás el ***Embedding*** de resultado, con el texto recibido ya limpio.
   - Se usa *Base64*, porque el texto puede contener caracteres que pueden chocar con el esquema de una URL correcta o de un JSON bien formado. Aplica igual para el caso de los datos JSON recibidos en los *POST*.
