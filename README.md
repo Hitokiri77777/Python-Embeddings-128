@@ -121,7 +121,7 @@ Se crearía una imagen de ***2.1GB*** ya funcional.
 
 ***Nota Importante:*** Recuerda que la imagen de la aplicación Flask, debe cargar el modelo *"paraphrase-multilingual-MiniLM-L12-v2"* desde internet en cada arranque. Ver el Log, para revisar cuando ya esta lista para trabajar.
 
-Esto se puede evitar, descargando dicho modelo a un directorio, y hacer que forme parte de la imagen. Y modificar también el código fuente para cargarlo desde disco. Decidí dejarlo de esa forma, para no tener que agregar ese directorio en el repositorio GIT. Son unos 400 MB.
+Esto se puede evitar, descargando dicho modelo a un directorio, y hacer que forme parte de la imagen. Y modificar también el código fuente para cargarlo desde disco. Decidí dejarlo de esa forma, para no tener que agregar ese directorio en el repositorio GIT. Son unos 480 MB.
 
 
 ### Sugerencia para llevarlo a Producción
