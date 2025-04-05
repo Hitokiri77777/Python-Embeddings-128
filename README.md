@@ -85,11 +85,19 @@ También se aplica la regla de que cada chunk tenga a al menos 150 caracteres. C
 
 ---
 
-## Instalación para Desarrollo
+# Alternativas de uso
+ - En máquina local: Con un ambiente en Python en toda regla. Sirve para desarrollo.
+ - En Producción hay varias opciones:
+    1. También con un ambiente Python, pero sirviendo la aplicación con Waitress.
+    2. Ejecutable (EXE), pero es dificil de mantener; no tan recomendable y se vuelve un ejecutable enorme, dificil de hacer cambios.
+    3. Administrar como Servicio de Sistema. Usando NSSM (al final requiere su ambiente Python y también se sirve con Waitres, pero NSSM lo registra como servicio).
+    4. Como Imagen Docker (Docker + Flask + Waistress + NGINX). Es la opción ideal. Es lo más limpio y portable. Fácil de mover a Linux o la Nube ó escalar con Docker Compose / Kubernets.
+
+## Instalación para Desarrollo con su ambiente Python
 Si quieres tener la aplicación funcionando en tu entorno de desarrollo:
  1. Clona el repositorio : ```git clone https://github.com/Hitokiri77777/Python-Embeddings-128.git```
  2. En tu terminal, cámbiate al folder creado.
- 3. Crea el ambiente virtual con python. Usar : ``` python -m venv venv ```
+ 3. Crea el ambiente virtual con python (Se usó probó con Python 3.11.9). Usar : ``` python -m venv venv ```
  4. Activa el ambiente virtual:
     - En Windows : ``` venv\Scripts\activate ```
     - En Linux   : ``` source venv/bin/activate ```
