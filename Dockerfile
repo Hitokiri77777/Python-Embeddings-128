@@ -23,9 +23,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Descargar el modelo de spaCy
 RUN python -m spacy download es_core_news_md
 
-# Descargar el modelo de spaCy
-RUN python -m spacy download es_core_news_md
-
 # Instalamos el paquete Waitress
 RUN pip install --no-cache-dir waitress
 
