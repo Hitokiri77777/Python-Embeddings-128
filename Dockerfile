@@ -33,7 +33,7 @@ WORKDIR /app
 # Copiar solo lo necesario desde la etapa de construcción, la 1
 COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
-COPY --from=builder /root/.cache/torch /root/.cache/torch
+COPY --from=builder /root/.cache/torch/sentence_transformers /root/.cache/torch/sentence_transformers
 
 # Copiar código de la aplicación
 COPY . .
