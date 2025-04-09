@@ -120,114 +120,26 @@ Usar el archivo **Dockerfile** en la raíz del proyecto, para creación y puesta
 
 1. Teniendo Docker instalado. Hacer : ```docker build -t python_embeddings .```
    para crear la imagen.
-2. Obten el ID de la imagen creada, listando las imagenes existentes con : ```docker images```
+2. Obten el ID de la imagen creada, listando las imágenes existentes con : ```docker images```
 3. Córrela, suponiendo que el ID es 562469e4e257 : ```docker run -p 5000:5000 562469e4e257```
    Con esto, el puerto 5000 de la imagen, se mapeará al también 5000 de tu máquina.
 4. Ahora si podrías hacer la prueba: ```http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=```
 
-Se crearía una imagen de ***2.1GB*** ya funcional.
+**09-Abril-2024**
+Se actualizó archivo ***Dockerfile***, donde se pulen y toman en cuenta muchos aspectos:
+- Debería ser ahora una imagen más estable, incluye variables de entorno y ya no se ejecuta como root.
+- Lo más reducida posible: Ya no se incluyen compiladores, descargables, temporales y se reducen capas de creación de Docker.
+- Ya incluiría el modelo *"paraphrase-multilingual-MiniLM-L12-v2"* cacheado dentro de la imagen.
+* Únicamente falta comprobar el tamaño final de la imagen.
 
-***Nota Importante:*** Recuerda que la imagen de la aplicación Flask, debe cargar el modelo *"paraphrase-multilingual-MiniLM-L12-v2"* desde internet en cada arranque. Ver el Log, para revisar cuando ya esta lista para trabajar.
-
-Esto se puede evitar, descargando dicho modelo a un directorio, y hacer que forme parte de la imagen. Y modificar también el código fuente para cargarlo desde disco. Decidí dejarlo de esa forma, para no tener que agregar ese directorio en el repositorio GIT. Son unos 480 MB.
-
-
-### Sugerencia para llevarlo a Producción
-Puedes poner esta aplicación detrás de un servidor ***Nginx*** para mejorar rendimiento, seguridad y escalabilidad.
-
-Para hacerlo, puedes usar el archivo ***docker-compose.yml***. Esto crearía el flujo siguiente:
-1. El usuario accede a http://localhost/.
-2. Nginx recibe la solicitud en el puerto 80.
-3. Nginx reenvía la solicitud al contenedor de Flask en backend:5000.
-4. Flask procesa la petición y devuelve la respuesta a Nginx.
-5. Nginx envía la respuesta final al usuario.
-
-Utilizarías el comando ```docker-compose up --build -d```
-- Esto crearía las 2 imágenes, una para la App de Flask, nuestra app. Y otra con un linux Alpine súper ligero, con un servidor de Nginx. Y un "puente de red" para hacer que las dos imágenes trabajen en conjunto.
-
-Tener una aplicación Flask detrás de un servidor Nginx es una práctica recomendada en entornos de producción porque mejora la seguridad, el rendimiento y la escalabilidad.
-
-### Problemas de ejecutar Flask directamente
-Si se ejecuta Flask de forma nativa con python app.py nos enfrentaríamos a varias limitaciones:
-
-- Flask no es eficiente manejando múltiples conexiones → Puede procesar sólo un número limitado de solicitudes simultáneamente.
-- No maneja archivos estáticos eficientemente → Sirviendo imágenes, CSS o JS desde Flask, el rendimiento será pobre (No es el caso de nuestra aplicación).
-- No soporta balanceo de carga → No puedes escalar a múltiples instancias fácilmente.
-- No maneja HTTPS nativamente → No puedes configurar certificados SSL directamente en Flask.
-
-### ¿Por qué usar Nginx como proxy reverso?
-Nginx es un servidor web ligero y eficiente que actúa como intermediario entre los clientes (navegador, API, etc.) y la aplicación Flask.
-
-- Mejora el rendimiento → Puede manejar miles de conexiones concurrentes.
-- Maneja archivos estáticos → Como imágenes, CSS y JS sin cargar Flask innecesariamente.
-- Balanceo de carga → Si usas múltiples instancias de Flask, distribuye las peticiones.
-- Soporte SSL/TLS → Se encarga de manejar certificados HTTPS.
-- Protege contra ataques → Como DDoS y accesos no autorizados.
-
-### Beneficios en producción
-- Optimización de tráfico → Nginx maneja archivos estáticos, evitando que Flask se sobrecargue.
-- Seguridad → Evita que los clientes accedan directamente a Flask.
-- Escalabilidad → Puedes agregar múltiples instancias de Flask detrás de Nginx.
-- HTTPS fácil → Puedes configurar un certificado SSL en Nginx sin tocar Flask. 
-
-### Si al final solo hay una aplicación Flask ejecutándose, ¿por qué Nginx mejora el rendimiento? 
-La clave está en cómo se manejan las conexiones y la distribución de carga.
-
-Flask maneja mal muchas conexiones concurrentes
-Flask, por sí solo, no está diseñado para manejar muchas conexiones al mismo tiempo, porque usa un servidor de desarrollo interno.
-
-Nginx actúa como un buffer inteligente entre los clientes y Flask, mejorando el rendimiento por varios motivos:
-
-1. Nginx maneja muchas conexiones simultáneas eficientemente
-Nginx usa un modelo asíncrono basado en eventos, en lugar de crear un nuevo proceso/hilo para cada solicitud. Esto le permite gestionar miles de conexiones sin consumir muchos recursos.
-
-📌 Ejemplo práctico:
-
-Sin Nginx: Flask recibe 1000 peticiones y solo puede atender 5-10 a la vez. Las demás quedan bloqueadas.
-
-Con Nginx: Nginx recibe 1000 peticiones y distribuye las solicitudes a Flask de manera controlada. Mientras Flask procesa una, Nginx retiene las demás sin bloquearlas.
-
-2. Nginx maneja archivos estáticos sin pasar por Flask
-Si sirves archivos como imágenes, CSS o JS con Flask, cada solicitud consume recursos de Flask innecesariamente.
-🚀 Con Nginx, esos archivos se sirven directamente sin afectar el rendimiento de Flask.
-
-📌 Ejemplo práctico:
-
-Sin Nginx: Flask recibe 1000 solicitudes, incluyendo archivos estáticos. Se satura.
-
-Con Nginx: Nginx atiende las solicitudes de archivos estáticos y solo pasa las solicitudes de API a Flask.
-
-3. Nginx hace balanceo de carga (opcional)
-Si tu aplicación Flask crece, puedes correr múltiples instancias de Flask y usar Nginx para distribuir la carga.
-
-📌 Ejemplo práctico:
-
-Sin Nginx: Una sola instancia de Flask se satura con 1000 usuarios.
-
-Con Nginx + 3 Flask: Nginx distribuye las solicitudes entre 3 instancias, mejorando la escalabilidad.
-
-4. Nginx mantiene conexiones abiertas y usa caché
-Cuando un cliente accede a Flask directamente, cada nueva conexión se abre y cierra.
-📌 Con Nginx, las conexiones pueden mantenerse abiertas y reutilizarse, reduciendo la latencia.
-
-🔥 Conclusión:
-Nginx no hace que Flask procese más rápido, pero evita que Flask se sature y distribuye mejor las solicitudes. Por eso es fundamental para producción. 
-
-***NOTA:*** Si vas a crear la imagen de Docker, que no sea desde el folder usado para una instalación de desarrollo. Sólo agregarías espacio innecesario a la imagen (incluiría todo el subdirectorio /venv/).
-
-## Creación de Imagenes en Docker (Flask y Nginx)
-Teniendo Docker instalado, cámbiate al directorio de la aplicación. Y con el comando ```docker-compose up --build```
-Eso crearía 2 imágenes en Docker dentro de una red.
-
-Comprueba que las 2 imágenes se estan ejecutando  con ```docker ps```
-
-Comprueba que Nginx recibe las llamadas las direcciona a Flask:
-```http://127.0.0.1/test?base64text=SG9sYSBNdW5kbyE=```
-A diferencia de las pruebas anteriores, aqui no se indica el puerto 5000.
+# (Se quitan referencias a NGINX, al tenerse ya un Balanceador de Carga Corporatico y se usa IIS)
+ También se quitaron los archivos siguientes del repositorio:
+  - \Dockerfile.nginx
+  - \docker-compose.yml
+  - \nginx.conf
 
  ## Prueba básica de creación de Embedding
   - Usa: http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=
-    ó, cuando ya hay un servidor Nginx al frente: http://127.0.0.1/test?base64text=SG9sYSBNdW5kbyE=
   - Con esto envías un texto corto en *Base64* sin usar *POST*.
   - Verás el ***Embedding*** de resultado, con el texto recibido ya limpio.
   - Se usa *Base64*, porque el texto puede contener caracteres que pueden chocar con el esquema de una URL correcta o de un JSON bien formado. Aplica igual para el caso de los datos JSON recibidos en los *POST*.
