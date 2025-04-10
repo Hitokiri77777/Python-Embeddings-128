@@ -69,6 +69,8 @@ En este orden:
 - Se reemplazan todos los tokens : ``` '<br/><br/>'``` por '```\n```'.
 - Se reemplazan todos los tokens : ``` '<br/>'``` por '```\n```'.
 - Se reemplazan todos los tokens : ``` '<br />'``` por '```\n```'.
+- Se reemplazan todos los tokens : ``` ' —————————— '``` por '```\n```'.
+- Se reemplazan todos los tokens : ``` ' ___ '``` por '```\n```'.
 - Se eliminan el resto de TAGs de html.
 - Se quitan todos los tokens : '***[[03]]***'.
 - Se quitan todos los tokens : '***[[05]]***'.
@@ -79,7 +81,7 @@ En este orden:
 ### Lógica de separación de texto largo en varios Chunks
 Una vez limpio el texto y aplicando el modelo de procesamiento de lenguaje natural **es_core_news_md** con Spacy; se separa en oraciones y aplicando  ***Similaridad de Coseno*** con un umbral de **0.6** de similitud, se agrupan oraciones consecutivas en un mismo ***chunk***.
 
-En detalle, se obtienen embeddings para cada oración, y usando operaciones de similitud entre esas oraciones consecutivas, se determinan si varias oraciones se pueden agrupar a un mismo chunk o se manejan en chunks separados. 
+En resumen, se obtienen embeddings para cada oración, y usando operaciones de similitud entre esas oraciones consecutivas, se determinan si varias oraciones se pueden agrupar a un mismo chunk o se manejan en chunks separados. 
 
 También se aplica la regla de que cada chunk tenga a al menos 150 caracteres. Con esto, oraciones muy cortas se agrupan en otras.
 
@@ -92,12 +94,13 @@ También se aplica la regla de que cada chunk tenga a al menos 150 caracteres. C
     2. Ejecutable (EXE), pero es dificil de mantener; no tan recomendable y se vuelve un ejecutable enorme, dificil de hacer cambios.
     3. Administrar como Servicio de Sistema. Usando NSSM (al final requiere su ambiente Python y también se sirve con Waitres, pero NSSM lo registra como servicio).
     4. Como Imagen Docker (Docker + Flask + Waistress + NGINX). Es la opción ideal. Es lo más limpio y portable. Fácil de mover a Linux o la Nube ó escalar con Docker Compose / Kubernets.
+    5. Como Imagen Docker (Docker + Flask + Waistress). Es la opción ideal, si se instala en una infraestructura que ya cuenta con las funciones de "Balanceo de Carga" y "Proxy Inverso" (Servidores IIS). En estos casos, NGINX ya no es necesario.
 
 ## Instalación para Desarrollo con su ambiente Python
 Si quieres tener la aplicación funcionando en tu entorno de desarrollo:
  1. Clona el repositorio : ```git clone https://github.com/Hitokiri77777/Python-Embeddings-128.git```
  2. En tu terminal, cámbiate al folder creado.
- 3. Crea el ambiente virtual con python (Se usó probó con Python 3.11.9). Usar : ``` python -m venv venv ```
+ 3. Crea el ambiente virtual con python (Se probó en Python 3.11.9). Usar : ``` python -m venv venv ```
  4. Activa el ambiente virtual:
     - En Windows : ``` venv\Scripts\activate ```
     - En Linux   : ``` source venv/bin/activate ```
@@ -105,7 +108,7 @@ Si quieres tener la aplicación funcionando en tu entorno de desarrollo:
  6. Ejecuta la aplicación : ``` python app.py ```
 
  * Podría usarse un servidor como "waitress" de Python, para mejorar respuestas de la aplicación flask:
-   - Instala el paquete ```pip install waitress``` con el ambiente activado
+   - Instala el paquete ```pip install waitress``` con el ambiente activado.
    - Sirve la aplicación de manera más eficiente con el modelo multihilo de waitress con esto:
 
        ```waitress-serve --host=0.0.0.0 --port=5000 app:app```
@@ -120,10 +123,9 @@ Usar el archivo **Dockerfile** en la raíz del proyecto, para creación y puesta
 
 1. Teniendo Docker instalado. Hacer : ```docker build -t python_embeddings .```
    para crear la imagen.
-2. Obten el ID de la imagen creada, listando las imágenes existentes con : ```docker images```
-3. Pruébalo con  : ```docker run -it --rm -p 5000:5000 python_embeddings```
-   Con esto, el puerto 5000 de la imagen, se mapeará al también 5000 de tu máquina, e irás viendo los mensajes en consola.
-4. Ahora si podrías hacer la prueba: ```http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=```
+2. Pruébalo con  : ```docker run -it --rm -p 5000:5000 python_embeddings```
+   Con esto, el puerto 5000 de la imagen se mapeará al también 5000 de tu máquina, e irás viendo los mensajes en consola.
+3. Ahora si podrías hacer la prueba: ```http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=```
 
 **10-Abril-2024**
 Se actualizó archivo ***Dockerfile***, donde se pulen y toman en cuenta varios aspectos:

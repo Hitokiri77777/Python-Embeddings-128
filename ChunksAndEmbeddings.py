@@ -37,6 +37,8 @@ class ChunksAndEmbeddings:
         cleaned_text = cleaned_text.replace("<br/><br/>", os.linesep)
         cleaned_text = cleaned_text.replace("<br/>", os.linesep)
         cleaned_text = cleaned_text.replace("<br />", os.linesep)
+        cleaned_text = cleaned_text.replace(" —————————— ", os.linesep)        
+        cleaned_text = cleaned_text.replace(" ___ ", os.linesep)
         soup         = BeautifulSoup(cleaned_text, "html.parser")
         cleaned_text = soup.get_text(separator=' ', strip=True)
         cleaned_text = cleaned_text.replace("[[05]]", "")
