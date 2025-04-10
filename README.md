@@ -104,7 +104,7 @@ Si quieres tener la aplicación funcionando en tu entorno de desarrollo:
  5. Instala las dependencias: ``` pip install -r requirements.txt ``` 
  6. Ejecuta la aplicación : ``` python app.py ```
 
- * Podría usarse un servidor como "waitress" de Python, para mejorar respuestas de la aplicación flask
+ * Podría usarse un servidor como "waitress" de Python, para mejorar respuestas de la aplicación flask:
    - Instala el paquete ```pip install waitress``` con el ambiente activado
    - Sirve la aplicación de manera más eficiente con el modelo multihilo de waitress con esto:
 
@@ -126,14 +126,14 @@ Usar el archivo **Dockerfile** en la raíz del proyecto, para creación y puesta
 4. Ahora si podrías hacer la prueba: ```http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=```
 
 **10-Abril-2024**
-Se actualizó archivo ***Dockerfile***, donde se pulen y toman en cuenta muchos aspectos:
+Se actualizó archivo ***Dockerfile***, donde se pulen y toman en cuenta varios aspectos:
 - Debería ser ahora una imagen más estable, incluye variables de entorno y ya no se ejecuta como root.
 - Lo más reducida posible: Ya no se incluyen compiladores, descargables, temporales y se reducen capas de creación de Docker.
 - Ya incluiría el modelo *"paraphrase-multilingual-MiniLM-L12-v2"* cacheado dentro de la imagen.
 * Se comprobó que la imagen es perfectamente funcional y sin errores.
 * El tamaño final de la imagen es de 2.16 GigaBytes.
 
-# (Se quitan referencias a NGINX, al tenerse ya un Balanceador de Carga Corporatico y se usa IIS)
+# (Se quitan referencias a NGINX, al tenerse ya un Balanceador de Carga Corporativo y usar IIS)
  También se quitaron los archivos siguientes del repositorio:
   - \Dockerfile.nginx
   - \docker-compose.yml
