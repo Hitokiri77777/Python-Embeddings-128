@@ -65,7 +65,7 @@ def process_text():
 @app.route('/health', methods=['GET'])
 @app.route('/', methods=['GET'])
 def health_check():
-    return jsonify({"status": "ok", "message": "Servicio funcionando correctamente"})
+    return jsonify({"status": "ok", "message": "Servicio funcionando correctamente. Version 1.0.0."})
 
 @app.route('/test', methods=['GET'])
 def simple_test():
