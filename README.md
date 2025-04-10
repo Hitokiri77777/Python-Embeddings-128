@@ -121,8 +121,8 @@ Usar el archivo **Dockerfile** en la raíz del proyecto, para creación y puesta
 1. Teniendo Docker instalado. Hacer : ```docker build -t python_embeddings .```
    para crear la imagen.
 2. Obten el ID de la imagen creada, listando las imágenes existentes con : ```docker images```
-3. Córrela, suponiendo que el ID es 562469e4e257 : ```docker run -p 5000:5000 562469e4e257```
-   Con esto, el puerto 5000 de la imagen, se mapeará al también 5000 de tu máquina.
+3. Pruébalo con  : ```docker run -it --rm -p 5000:5000 python_embeddings```
+   Con esto, el puerto 5000 de la imagen, se mapeará al también 5000 de tu máquina, e irás viendo los mensajes en consola.
 4. Ahora si podrías hacer la prueba: ```http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=```
 
 **10-Abril-2024**
