@@ -131,7 +131,7 @@ Se actualizó archivo ***Dockerfile***, donde se pulen y toman en cuenta muchos 
 - Lo más reducida posible: Ya no se incluyen compiladores, descargables, temporales y se reducen capas de creación de Docker.
 - Ya incluiría el modelo *"paraphrase-multilingual-MiniLM-L12-v2"* cacheado dentro de la imagen.
 * Se comprobó que la imagen es perfectamente funcional y sin errores.
-* El tamaño final de la imagen es de 2.3 GigaBytes.
+* El tamaño final de la imagen es de 2.16 GigaBytes.
 
 # (Se quitan referencias a NGINX, al tenerse ya un Balanceador de Carga Corporatico y se usa IIS)
  También se quitaron los archivos siguientes del repositorio:
