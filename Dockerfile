@@ -20,7 +20,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && pip install --no-cache-dir -r requirements.txt \
     && python -m spacy download es_core_news_md \
     && pip install --no-cache-dir waitress \
-    && python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')" \
     && apt-get purge -y build-essential python3-dev \
     && apt-get autoremove -y \
     && apt-get clean 
@@ -28,23 +27,31 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Etapa 2. La que realmente se usará
 FROM python:3.9-slim-buster
 
+# Crear el usuario appuser primero
+RUN useradd -m appuser && \
+    mkdir -p /home/appuser/.cache/huggingface && \
+    mkdir -p /app && \
+    chown -R appuser:appuser /home/appuser/.cache /app
+
 WORKDIR /app
 
 # Copiar solo lo necesario desde la etapa de construcción, la 1
 COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
-COPY --from=builder /root/.cache/torch/sentence_transformers /root/.cache/torch/sentence_transformers
 
-# Copiar código de la aplicación
-COPY . .
+# Copiar código de la aplicación y asegurarse de que tiene los permisos correctos
+COPY --chown=appuser:appuser . .
 
-# Crear y cambiar a un usuario no privilegiado
-RUN useradd -m appuser && chown -R appuser:appuser /app /root/.cache
+# Cambiar a usuario no privilegiado
 USER appuser
 
 # Configurar variables de entorno
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    HF_HOME=/home/appuser/.cache/huggingface
+
+# Descargar el modelo con el usuario correcto la primera vez que se inicia el contenedor
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')"
 
 # Exponer puerto explícitamente
 EXPOSE 5000
