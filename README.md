@@ -135,15 +135,42 @@ Se actualizó archivo ***Dockerfile***, donde se pulen y toman en cuenta varios 
 * Se comprobó que la imagen es perfectamente funcional y sin errores.
 * El tamaño final de la imagen es de 2.16 GigaBytes.
 
-# (Se quitan referencias a NGINX, al tenerse ya un Balanceador de Carga Corporativo y usar IIS)
- También se quitaron los archivos siguientes del repositorio:
-  - \Dockerfile.nginx
-  - \docker-compose.yml
-  - \nginx.conf
 
- ## Prueba básica de creación de Embedding
-  - Usa: http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=
-  - Con esto envías un texto corto en *Base64* sin usar *POST*.
+### Sugerencia para llevarlo a Producción con NGINX
+Se puede poner esta aplicación detrás de un servidor ***Nginx*** para mejorar rendimiento, seguridad y escalabilidad.
+
+Para hacerlo, puedes usar el archivo ***docker-compose.yml***. Esto crearía el flujo siguiente:
+1. El usuario accede a http://localhost/.
+2. Nginx recibe la solicitud en el puerto 80.
+3. Nginx reenvía la solicitud al contenedor de Flask en backend:5000.
+4. Flask procesa la petición y devuelve la respuesta a Nginx.
+5. Nginx envía la respuesta final al usuario.
+
+Utilizarías el comando ```docker-compose up --build -d```
+- Esto crearía las 2 imágenes, una para la App de Flask, nuestra app. Y otra con un linux Alpine súper ligero, con un servidor de Nginx. Y un "puente de red" para hacer que las dos imágenes trabajen en conjunto.
+
+Tener una aplicación Flask detrás de un servidor Nginx es una práctica recomendada en entornos de producción porque mejora la seguridad, el rendimiento y la escalabilidad. Nginx es un servidor web ligero y eficiente que actúa como intermediario entre los clientes (navegador, API, etc.) y la aplicación Flask.
+
+### Beneficios en producción
+- Optimización de tráfico → Nginx maneja archivos estáticos, evitando que Flask se sobrecargue.
+- Seguridad → Evita que los clientes accedan directamente a Flask.
+- Escalabilidad → Puedes agregar múltiples instancias de Flask detrás de Nginx.
+- HTTPS fácil → Puedes configurar un certificado SSL en Nginx sin tocar Flask. 
+
+## Creación de Imagenes en Docker (Flask y Nginx)
+Teniendo Docker instalado, cámbiate al directorio de la aplicación. Y con el comando ```docker-compose up --build```
+Eso crearía 2 imágenes en Docker dentro de una red.
+
+Comprueba que las 2 imágenes se estan ejecutando  con ```docker ps```
+
+Comprueba que Nginx recibe las llamadas las direcciona a Flask:
+```http://127.0.0.1/test?base64text=SG9sYSBNdW5kbyE=```
+A diferencia de las pruebas anteriores, aqui no se indica el puerto 5000.
+
+
+## Prueba básica de creación de Embedding
+- Usa: http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=
+    ó, cuando ya hay un servidor Nginx al frente: http://127.0.0.1/test?base64text=SG9sYSBNdW5kbyE=
   - Verás el ***Embedding*** de resultado, con el texto recibido ya limpio.
   - Se usa *Base64*, porque el texto puede contener caracteres que pueden chocar con el esquema de una URL correcta o de un JSON bien formado. Aplica igual para el caso de los datos JSON recibidos en los *POST*.
   - Es posible que textos muy largos en *Base64*, sobrepasen el límite para *GET* de ***/test***, por si vas a probar textos propios en sea ruta **/test**.

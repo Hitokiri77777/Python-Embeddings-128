@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  flask_app:
+    build: .
+    container_name: flask_app
+    #dockerfile: Dockerfile
+    #image: python-embeddings-128-flask_app
+    expose:
+      - "5000" # Exponer el puerto 5000, pero esto se quitará
+    networks:
+      - mynetwork
+  
+  nginx_proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    #image: python-embeddings-128-flask_app
+    container_name: nginx_proxy
+    ports:
+      - "80:80"  # Exponer el puerto 80
+    depends_on:
+      - flask_app
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+    driver: bridge
