@@ -19,10 +19,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && pip install --no-cache-dir torch==2.6.0+cpu --index-url https://download.pytorch.org/whl/cpu \
     && pip install --no-cache-dir -r requirements.txt \
     && python -m spacy download es_core_news_md \
+    && python -c "import nltk; nltk.download('stopwords', download_dir='/usr/local/share/nltk_data')" \
     && pip install --no-cache-dir waitress \
     && apt-get purge -y build-essential python3-dev \
     && apt-get autoremove -y \
-    && apt-get clean 
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Etapa 2. La que realmente se usará
 FROM python:3.9-slim-buster
@@ -30,14 +32,16 @@ FROM python:3.9-slim-buster
 # Crear el usuario appuser primero
 RUN useradd -m appuser && \
     mkdir -p /home/appuser/.cache/huggingface && \
+    mkdir -p /usr/local/share/nltk_data && \
     mkdir -p /app && \
-    chown -R appuser:appuser /home/appuser/.cache /app
+    chown -R appuser:appuser /home/appuser/.cache /app /usr/local/share/nltk_data
 
 WORKDIR /app
 
 # Copiar solo lo necesario desde la etapa de construcción, la 1
 COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /usr/local/share/nltk_data /usr/local/share/nltk_data
 
 # Copiar código de la aplicación y asegurarse de que tiene los permisos correctos
 COPY --chown=appuser:appuser . .

@@ -49,6 +49,23 @@ Ejemplo de uso: ```http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=```
 ### La ruta ***/health***, igualmente en ***/*** del WebService
 Sirve para comprobar que el servicio esta trabajando.
 
+## **Actualización 16 Mayo 2025**
+* Se agrega el cálculo de **Keywords** al procesar *embeddings*; será parte de la respuesta. 
+  - Se calcularían 12 Keywords por todo el documento, y hasta 5 keywords por chunk devuelto.
+* También se agrega la ruta ***/keywords*** del WebService, para el caso donde sólo se necesite este cálculo.
+Sería con un POST, esperando los parámetros:
+    - textbase64: Sería el texto en Base64.
+    - quantity: Entero positivo que indique cuantas palabras se devolverían. 12 sería el default si no indica el parámetro o se indica mal. El máximo es 20. La cantidad resultante puede ser menor al lematizar.
+Ejemplo:
+```json
+    {
+        "textbase64": "SG9sYSBNdW5kbyE=",
+        "quantity": 10
+    }
+```
+ - Se usa **keybert**, con el mismo modelo **paraphrase-multilingual-MiniLM-L12-v2**.
+ - Se aplican **StopWords** en inglés y español de **nltk**.
+ - Se lematizan los resultados, para devolver la raiz de la palabra con **Spacy** usando el modelo **es_core_news_md**. Además de evitar repertir con esto palabras parecidas.
 ---
 
 ## Modelo de Embeddings
