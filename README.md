@@ -52,7 +52,7 @@ Sirve para comprobar que el servicio esta trabajando.
 ## **Actualización 16 Mayo 2025**
 * Se agrega el cálculo de **Keywords** al procesar *embeddings*; será parte de la respuesta. 
   - Se calcularían 12 Keywords por todo el documento, y hasta 5 keywords por chunk devuelto.
-* También se agrega la ruta ***/keywords*** del WebService, para el caso donde sólo se necesite este cálculo.
+* También se agrega la ruta ***/keywords*** al WebService, para el caso donde sólo se necesite este cálculo.
 Sería con un POST, esperando los parámetros:
     - textbase64: Sería el texto en Base64.
     - quantity: Entero positivo que indique cuantas palabras se devolverían. 12 sería el default si no indica el parámetro o se indica mal. El máximo es 20. La cantidad resultante puede ser menor al lematizar.
