@@ -38,25 +38,31 @@ def process_text():
             cleaned_text = MainObject.CleanText(text)
             embedding    = MainObject.GetSingleEmbedding(cleaned_text)
             keywords     = MainObject.GetSingleTextKeywords(cleaned_text)
+            entities     = MainObject.GetSingleTextEntities(cleaned_text)
             response     = {
                             "mode": "single",
                             "text": cleaned_text,
                             "embedding": embedding.tolist(),
-                            "keywords": keywords
+                            "keywords": keywords,
+                            "entities": entities
                            }
             print(f"   Embedding simple generado")
         else:
             # Modalidad para texto largo - dividir en chunks
-            Chunks           = MainObject.GetChunks(text)
-            Embedding        = MainObject.GetEmbeddings(Chunks)
-            keywordsChunks   = MainObject.GetKeywords(Chunks)
-            keywordsDocument = MainObject.GetSingleTextKeywords(text)
+            Chunks, entitiesDocument = MainObject.GetChunksAndEntities(text)
+            Embedding                = MainObject.GetEmbeddings(Chunks)
+            keywordsChunks           = MainObject.GetKeywords(Chunks)
+            keywordsDocument         = MainObject.GetSingleTextKeywords(text)
+            entitiesChunks           = MainObject.GetEntities(Chunks)
+            
             response         = {
-                                "mode": "chunks",
-                                "chunks": Chunks,
-                                "embedding": Embedding.tolist(),
-                                "keywordsPerChunk": keywordsChunks,
-                                "keywordsFullDocument": keywordsDocument
+                                "mode":                 "chunks",
+                                "chunks":               Chunks,
+                                "embedding":            Embedding.tolist(),
+                                "keywordsPerChunk":     keywordsChunks,
+                                "keywordsFullDocument": keywordsDocument,
+                                "entitiesPerChunk":     entitiesChunks,
+                                "entitiesFullDocument": entitiesDocument
                                }
             print(f"   Chunks generados [{len(Chunks):,}]")
         return jsonify(response)
@@ -109,6 +115,40 @@ def keywords():
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
+@app.route('/entities', methods=['POST'])
+def entities():
+    try:
+        # Obtener datos de la petición
+        if request.is_json:
+            data_json = request.get_json()
+            # Manejar texto en base64 si está codificado así
+            if "textbase64" in data_json:
+                text = data_json.get("textbase64", "")
+                text = base64.b64decode(text)
+                text = text.decode('utf-8')
+            else:
+                # Si no está en base64, usar el texto directamente
+                text = data_json.get("text", "")            
+                
+        else:
+            # Si no es JSON, usar el contenido como texto
+            text = request.data.decode('utf-8')
+            
+        print(f"   Sólo obtiene Entidades")
+        print(f"   Texto recibido    [{len(text):,}]")
+        
+        entities = MainObject.GetSingleTextEntities(text)
+        response = {
+            "mode": "entities",
+            "entities": entities
+        }
+        return jsonify(response)
+    
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
 # Ruta para verificar que el servicio está activo
 @app.route('/health', methods=['GET'])
 @app.route('/', methods=['GET'])
@@ -126,11 +166,13 @@ def simple_test():
         cleaned_text = MainObject.CleanText(text)
         embedding    = MainObject.GetSingleEmbedding(cleaned_text)
         keywords     = MainObject.GetSingleTextKeywords(cleaned_text)
+        entities     = MainObject.GetSingleTextEntities(cleaned_text)
         response = {
                 "mode": "test",
                 "text": cleaned_text,
                 "embedding": embedding[0].tolist(),
-                "keywords": keywords
+                "keywords": keywords,
+                "entities": entities
             }
         print(f"   Embedding simple generado")
         return jsonify(response)

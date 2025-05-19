@@ -3,6 +3,7 @@ from   sklearn.metrics.pairwise import cosine_similarity
 from   bs4                      import BeautifulSoup
 from   keybert                  import KeyBERT
 from   nltk.corpus              import stopwords
+from   flask                    import jsonify
 import faiss
 import spacy
 import re 
@@ -69,6 +70,11 @@ class ChunksAndEmbeddings:
         return cleaned_text
     
     def GetChunks(self, Text):
+        ###
+        ### Ya no usar esta versión. La totalidad de esa lógica se pasó a GetChunksAndEntities()
+        ### Esto se hizo, para aprovechar la linea 'doc = self.nlp(Text)' pues se duplicaba al obtener las entidades del mismo texto.
+        ### Y como esta función se usará muchísimas veces, cualquier optimización es bienvenida
+        ###
         # Limpiamos texto
         Text = self.CleanText(Text)
         # Procesar el texto con spaCy
@@ -144,17 +150,106 @@ class ChunksAndEmbeddings:
         Keywords = []
             
         for chunk in Chunks:        
-            extracted  = self.GetSingleTextKeywords(chunk, 5);# self.KeyBertModel.extract_keywords(chunk, keyphrase_ngram_range=(1, 1), stop_words=None, top_n=5, use_maxsum=True)[::-1] 
+            extracted  = self.GetSingleTextKeywords(chunk, 5)
             Keywords.append(extracted)
         return Keywords
     
     def GetSingleTextKeywords(self, text, quantity=12):
-        #Obtiene las palabras más importantes (de hecho retorna un arrreglo de tuplas (Key, score)
-        #Se piden 2 más, por si se repiten al menos tres y si devolver las pedidas.
+        #Obtiene las palabras más importantes (de hecho retorna un arreglo de tuplas (Key, score)
         #Aqui se usa la lista ya cargada de StopWords en inglés + español
         extracted = self.KeyBertModel.extract_keywords(text, keyphrase_ngram_range=(1, 1), stop_words=self.StopwordsList, top_n=quantity, use_maxsum=True)[::-1] 
         #Sólo se extraen las palabras, se ignora el score
         Keywords  = [kw for kw, _ in extracted]
         #Se lematizan (evitando repetir palabras con la misma base semántica)
-        return list({token.lemma_ for token in self.nlp(" ".join(Keywords))})[:quantity] 
+        #Es posible que por esta lematización, se reduzca la cantidad devuelta
+        lemmas = set()
+        for kw in Keywords:
+            doc = self.nlp(kw)
+            for token in doc:
+                if token.is_alpha:
+                    lemmas.add(token.lemma_)
+        Keywords = list(lemmas)
+        return Keywords
+    
+    def GetSingleTextEntities(self, text):
+        doc       = self.nlp(text)
+        
+        # Usamos un set para eliminar duplicados
+        entidades_set = set(
+            (ent.text, ent.label_) 
+            for ent in doc.ents 
+            if ent.label_ != "MISC"
+        )
+        
+        # Convertimos de nuevo a lista de diccionarios
+        entidades = [{"text": text, "label": label} for text, label in entidades_set]
+        return entidades
 
+    def GetEntities(self, Chunks):
+        entities  = []
+        
+        for chunk in Chunks:        
+            extracted  = self.GetSingleTextEntities(chunk)
+            entities.append(extracted)
+        return entities
+        
+        # doc       = self.nlp(text)
+        # entidades = []
+        # entidades = [{"text": ent.text, "label": ent.label_} for ent in doc.ents if ent.label_ not in ("MISC")]
+        # return entidades
+        # #return jsonify(entidades)
+
+    def GetChunksAndEntities(self, Text):
+        Chunks   = []
+        Entities = []
+        # Limpiamos texto
+        Text = self.CleanText(Text)
+        # Procesar el texto con spaCy
+        doc = self.nlp(Text)
+        
+        #Aprovechamos que ya se tiene ese doc creado, para obtener las entidades
+        Entities = [{"text": ent.text, "label": ent.label_} for ent in doc.ents if ent.label_ not in ("MISC")]
+        Entities = [{"text": ent.text, "label": ent.label_} for ent in doc.ents if ent.label_ not in ("MISC")]
+
+        # Dividir el texto en oraciones
+        sentences = [sent.text for sent in doc.sents]
+        
+        if not sentences:  # Si no hay oraciones después del procesamiento
+            return [Text]  # Devolver el texto completo como un único chunk
+
+        # Generar embeddings para cada oración
+        sentence_embeddings = self.EmbeddigModel.encode(sentences)
+
+        # Calcular similitud entre oraciones consecutivas
+        current_chunk = [sentences[0]]  # Primera oración, se asigna al primer chunk
+        threshold = 0.60                # Umbral de similitud para agrupar oraciones
+
+        for i in range(len(sentences) - 1):
+            current_sentence = sentences[i]
+            next_sentence = sentences[i + 1]
+
+            # Calcular similitud coseno entre oraciones consecutivas
+            similarity = cosine_similarity(
+                [sentence_embeddings[i]],
+                [sentence_embeddings[i + 1]]
+            )[0][0]            
+
+            # Si se parecen, se agrega al chunk que se está formando
+            if similarity > threshold or len(next_sentence) < 150 or len(current_sentence) < 150:
+                current_chunk.append(next_sentence)
+            # Cuando ya no se parecen, el chunk que se formaba, se termina
+            # Y se empieza a formar otro chunk
+            else:
+                Chunks.append(" ".join(current_chunk))
+                current_chunk = []
+                current_chunk.append(next_sentence)
+
+        # Al terminar el ciclo, si había un chunk formándose se agrega como último generado
+        if current_chunk:
+            Chunks.append(" ".join(current_chunk))
+        
+        #Limpia los brincos de linea iniciales de cada chunk
+        for i in range(len(Chunks) - 1):
+            Chunks[i] = re.sub(r'^[\\r\\n]+', '', Chunks[i]).strip()
+            
+        return Chunks, Entities        

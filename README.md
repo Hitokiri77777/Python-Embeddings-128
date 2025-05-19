@@ -49,9 +49,9 @@ Ejemplo de uso: ```http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=```
 ### La ruta ***/health***, igualmente en ***/*** del WebService
 Sirve para comprobar que el servicio esta trabajando.
 
+
 ## **Actualización 16 Mayo 2025**
-* Se agrega el cálculo de **Keywords** al procesar *embeddings*; será parte de la respuesta. 
-  - Se calcularían 12 Keywords por todo el documento, y hasta 5 keywords por chunk devuelto.
+* Se agrega el cálculo de **Keywords** al procesar *embeddings*; será parte de la respuesta.  Se devolverá un arreglo de hasta 12 keywords por todo el documento. Y máximo 5 por cada chunk generado. 
 * También se agrega la ruta ***/keywords*** al WebService, para el caso donde sólo se necesite este cálculo.
 Recibiendo un POST que espera los parámetros:
     - textbase64: Sería el texto a procesar en Base64.
@@ -67,6 +67,23 @@ Ejemplo:
  - Se aplican **StopWords** en inglés y español de **nltk**.
  - Se lematizan los resultados, para devolver la raiz de la palabra con **Spacy** usando el modelo **es_core_news_md**. Además de evitar repertir con esto palabras parecidas.
 ---
+
+## **Actualización 19 Mayo 2025**
+* Se agrega el cálculo de **Entities** también al procesar *embeddings*. 
+  - Se retornaría un arreglo de tuplas "(text, label)" que definirán las entidades por todo el documento. Y un arreglo también por cada chunk.
+* También se agrega la ruta ***/entities*** al WebService, para el caso donde sólo se necesite este cálculo. Aqui se recibe un POST con el parámetro **textbase64**: Sería el texto a procesar en Base64.
+
+Ejemplo:
+```json
+    {
+        "textbase64": "R29iaWVybm8gZGUgRXN0YWRvcyBVbmlkb3Mu"
+    }
+```
+ - Se usa **Spacy** con el modelo **es_core_news_md**.
+ - Se evita devolver entidades repetidas.
+ - Se evitan las entidades de etiqueta 'MISC'. 
+---
+
 
 ## Modelo de Embeddings
 Se utiliza el modelo ***paraphrase-multilingual-MiniLM-L12-v2***, que es de tamaño medio y funcional para texto en varios idiomas (inglés y español incluidos). Con este modelo se generan vectores de 384 dimensiones.
