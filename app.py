@@ -1,6 +1,7 @@
+from flask       import Flask, request, jsonify
+from collections import OrderedDict
 import base64
 import ChunksAndEmbeddings
-from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
@@ -39,13 +40,13 @@ def process_text():
             embedding    = MainObject.GetSingleEmbedding(cleaned_text)
             keywords     = MainObject.GetSingleTextKeywords(cleaned_text)
             entities     = MainObject.GetSingleTextEntities(cleaned_text)
-            response     = {
-                            "mode": "single",
-                            "text": cleaned_text,
-                            "embedding": embedding.tolist(),
-                            "keywords": keywords,
-                            "entities": entities
-                           }
+            response     = OrderedDict([
+                                        ("mode",      "single"),
+                                        ("text",      cleaned_text),
+                                        ("embedding", embedding.tolist()),
+                                        ("keywords",  keywords),
+                                        ("entities",  entities)
+                                    ])
             print(f"   Embedding simple generado")
         else:
             # Modalidad para texto largo - dividir en chunks
@@ -55,15 +56,15 @@ def process_text():
             keywordsDocument         = MainObject.GetSingleTextKeywords(text)
             entitiesChunks           = MainObject.GetEntities(Chunks)
             
-            response         = {
-                                "mode":                 "chunks",
-                                "chunks":               Chunks,
-                                "embedding":            Embedding.tolist(),
-                                "keywordsPerChunk":     keywordsChunks,
-                                "keywordsFullDocument": keywordsDocument,
-                                "entitiesPerChunk":     entitiesChunks,
-                                "entitiesFullDocument": entitiesDocument
-                               }
+            response     = OrderedDict([            
+                                        ("mode",                 "chunks"),
+                                        ("chunks",               Chunks),
+                                        ("embedding",            Embedding.tolist()),
+                                        ("keywordsPerChunk",     keywordsChunks),
+                                        ("keywordsFullDocument", keywordsDocument),
+                                        ("entitiesPerChunk",     entitiesChunks),
+                                        ("entitiesFullDocument", entitiesDocument)
+                                       ])
             print(f"   Chunks generados [{len(Chunks):,}]")
         return jsonify(response)
     
@@ -104,10 +105,10 @@ def keywords():
         print(f"   Texto recibido    [{len(text):,}]")
         
         keywords  = MainObject.GetSingleTextKeywords(text,quantity)
-        response = {
-            "mode": "keywords",
-            "keywords": keywords
-        }
+        response     = OrderedDict([
+                                    ("mode",    "keywords"),
+                                    ("keywords", keywords)
+                                  ])
         return jsonify(response)
     
     except Exception as e:
@@ -137,11 +138,11 @@ def entities():
         print(f"   Sólo obtiene Entidades")
         print(f"   Texto recibido    [{len(text):,}]")
         
-        entities = MainObject.GetSingleTextEntities(text)
-        response = {
-            "mode": "entities",
-            "entities": entities
-        }
+        entities = MainObject.GetSingleTextEntities(text)        
+        response = OrderedDict([
+                                ("mode",    "entities"),
+                                ("entities", entities)
+                              ])
         return jsonify(response)
     
     except Exception as e:
@@ -153,7 +154,7 @@ def entities():
 @app.route('/health', methods=['GET'])
 @app.route('/', methods=['GET'])
 def health_check():
-    return jsonify({"status": "ok", "message": "Servicio funcionando correctamente. Version 1.0.1."})
+    return jsonify({"status": "ok", "message": "Servicio funcionando correctamente. Version 1.0.2."})
 
 @app.route('/test', methods=['GET'])
 def simple_test():
@@ -167,13 +168,13 @@ def simple_test():
         embedding    = MainObject.GetSingleEmbedding(cleaned_text)
         keywords     = MainObject.GetSingleTextKeywords(cleaned_text)
         entities     = MainObject.GetSingleTextEntities(cleaned_text)
-        response = {
-                "mode": "test",
-                "text": cleaned_text,
-                "embedding": embedding[0].tolist(),
-                "keywords": keywords,
-                "entities": entities
-            }
+        response = OrderedDict([        
+                                ("mode", "test"),
+                                ("text", cleaned_text),
+                                ("embedding", embedding[0].tolist()),
+                                ("keywords", keywords),
+                                ("entities", entities)
+                              ])
         print(f"   Embedding simple generado")
         return jsonify(response)
 

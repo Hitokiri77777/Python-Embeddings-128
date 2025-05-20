@@ -252,4 +252,5 @@ class ChunksAndEmbeddings:
         for i in range(len(Chunks) - 1):
             Chunks[i] = re.sub(r'^[\\r\\n]+', '', Chunks[i]).strip()
             
-        return Chunks, Entities        
+        return Chunks, Entities
+    

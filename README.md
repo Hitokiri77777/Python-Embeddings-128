@@ -66,12 +66,21 @@ Ejemplo:
  - Se usa **keybert**, con el mismo modelo **paraphrase-multilingual-MiniLM-L12-v2**.
  - Se aplican **StopWords** en inglés y español de **nltk**.
  - Se lematizan los resultados, para devolver la raiz de la palabra con **Spacy** usando el modelo **es_core_news_md**. Además de evitar repertir con esto palabras parecidas.
+ * Prueba básica para **Keywords**: 
+ ```
+ http://127.0.0.1:5000/test?base64text=RWwgY2FtYmlvIGNsaW3DoXRpY28gZXN0w6EgcHJvdm9jYW5kbyB1biBhdW1lbnRvIGRlbCBuaXZlbCBkZWwgbWFyIHkgZXZlbnRvcyBjbGltw6F0aWNvcyBleHRyZW1vcyBlbiBtdWNoYXMgcGFydGVzIGRlbCBtdW5kby4=
+ ```
 ---
 
 ## **Actualización 19 Mayo 2025**
 * Se agrega el cálculo de **Entities** también al procesar *embeddings*. 
   - Se retornaría un arreglo de tuplas "(text, label)" que definirán las entidades por todo el documento. Y un arreglo también por cada chunk.
 * También se agrega la ruta ***/entities*** al WebService, para el caso donde sólo se necesite este cálculo. Aqui se recibe un POST con el parámetro **textbase64**: Sería el texto a procesar en Base64.
+
+* Prueba básica para **Entidades**: 
+```
+http://127.0.0.1:5000/test?base64text=R29iaWVybm8gZGUgRXN0YWRvcyBVbmlkb3Mu
+```
 
 Ejemplo:
 ```json
