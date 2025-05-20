@@ -73,7 +73,7 @@ Ejemplo:
 ---
 
 ## **Actualización 19 Mayo 2025**
-* Se agrega el cálculo de **Entities** también al procesar *embeddings*. 
+* Se agrega el cálculo de **Entities** también al procesar *embeddings*. Véase NER (Named Entity Recognition). 
   - Se retornaría un arreglo de tuplas "(text, label)" que definirán las entidades por todo el documento. Y un arreglo también por cada chunk.
 * También se agrega la ruta ***/entities*** al WebService, para el caso donde sólo se necesite este cálculo. Aqui se recibe un POST con el parámetro **textbase64**: Sería el texto a procesar en Base64.
 
