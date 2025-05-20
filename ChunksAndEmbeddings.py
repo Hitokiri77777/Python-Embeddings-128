@@ -16,9 +16,9 @@ class ChunksAndEmbeddings:
 
     def Load_LanguageModel(self):
         # Cargar modelo de embeddings desde disco duro
-        #self.EmbeddigModel = SentenceTransformer("../ModelosIA/paraphrase-multilingual-MiniLM-L12-v2", )
+        self.EmbeddigModel = SentenceTransformer("../ModelosIA/paraphrase-multilingual-MiniLM-L12-v2", )
         # Cargar modelo de embeddings desde internet (Así debe usarse cuando se ejecuta desde Docker)
-        self.EmbeddigModel = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+        #self.EmbeddigModel = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
 
         #Mismo modelo cargado, se usa para KeyBERT
         self.KeyBertModel  = KeyBERT(self.EmbeddigModel)
@@ -70,11 +70,10 @@ class ChunksAndEmbeddings:
         return cleaned_text
     
     def GetChunks(self, Text):
-        ###
-        ### Ya no usar esta versión. La totalidad de esa lógica se pasó a GetChunksAndEntities()
-        ### Esto se hizo, para aprovechar la linea 'doc = self.nlp(Text)' pues se duplicaba al obtener las entidades del mismo texto.
-        ### Y como esta función se usará muchísimas veces, cualquier optimización es bienvenida
-        ###
+        ### Esta función y  GetChunksAndEntities()  comparten totalmente la misma lógica
+        ###  excepto por lo que retornan y la obtención de entidades
+        ### Si hay un cambio o corrección que no sea relativo a eso, debe hacerse en las 2 funciones
+        
         # Limpiamos texto
         Text = self.CleanText(Text)
         # Procesar el texto con spaCy
@@ -200,6 +199,9 @@ class ChunksAndEmbeddings:
         # #return jsonify(entidades)
 
     def GetChunksAndEntities(self, Text):
+        ### Esta función y  GetChunks()  comparten totalmente la misma lógica
+        ###  excepto por lo que retornan y la obtención de entidades
+        ### Si hay un cambio o corrección que no sea relativo a eso, debe hacerse en las 2 funciones
         Chunks   = []
         Entities = []
         # Limpiamos texto
@@ -252,5 +254,5 @@ class ChunksAndEmbeddings:
         for i in range(len(Chunks) - 1):
             Chunks[i] = re.sub(r'^[\\r\\n]+', '', Chunks[i]).strip()
             
-        return Chunks, Entities
+        return Chunks, Entities, Text
     

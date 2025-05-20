@@ -4,6 +4,7 @@ import base64
 import ChunksAndEmbeddings
 
 app = Flask(__name__)
+app.json.sort_keys = False
 
 # Inicializar el objeto una sola vez para reutilizarlo a nivel de aplicación
 MainObject = ChunksAndEmbeddings.ChunksAndEmbeddings()
@@ -11,7 +12,7 @@ MainObject.Load_LanguageModel()
 print("Modelos cargados y listos para usar")
 
 @app.route('/process', methods=['POST'])
-def process_text():
+def process():
     try:
         # Obtener datos de la petición
         if request.is_json:
@@ -32,40 +33,119 @@ def process_text():
             text = request.data.decode('utf-8')
             
         print(f"   Modo seleccionado [{mode}]")
-        print(f"   Texto recibido    [{len(text):,}]")
         
-        if mode == "single":
+        
+        if   mode == "single":
+            print(f"   Texto recibido    [{len(text):,}]")
             # Modalidad para texto corto - devolver un solo embedding
-            cleaned_text = MainObject.CleanText(text)
-            embedding    = MainObject.GetSingleEmbedding(cleaned_text)
-            keywords     = MainObject.GetSingleTextKeywords(cleaned_text)
-            entities     = MainObject.GetSingleTextEntities(cleaned_text)
-            response     = OrderedDict([
-                                        ("mode",      "single"),
-                                        ("text",      cleaned_text),
+            cleanedText = MainObject.CleanText(text)
+            embedding   = MainObject.GetSingleEmbedding(cleanedText)
+            keywords    = MainObject.GetSingleTextKeywords(cleanedText)
+            entities    = MainObject.GetSingleTextEntities(cleanedText)
+            response    = OrderedDict([
+                                        ("mode",      mode),
+                                        ("text",      cleanedText),
                                         ("embedding", embedding.tolist()),
                                         ("keywords",  keywords),
                                         ("entities",  entities)
-                                    ])
+                                      ])
             print(f"   Embedding simple generado")
-        else:
+        elif mode == "chunks":
+            print(f"   Texto recibido    [{len(text):,}]")
             # Modalidad para texto largo - dividir en chunks
-            Chunks, entitiesDocument = MainObject.GetChunksAndEntities(text)
-            Embedding                = MainObject.GetEmbeddings(Chunks)
-            keywordsChunks           = MainObject.GetKeywords(Chunks)
-            keywordsDocument         = MainObject.GetSingleTextKeywords(text)
-            entitiesChunks           = MainObject.GetEntities(Chunks)
+            Chunks         = MainObject.GetChunks(text)
+            Embedding      = MainObject.GetEmbeddings(Chunks)
+            keywordsChunks = MainObject.GetKeywords(Chunks)            
+            entitiesChunks = MainObject.GetEntities(Chunks)
             
-            response     = OrderedDict([            
-                                        ("mode",                 "chunks"),
+            response       = OrderedDict([            
+                                        ("mode",                 mode),
                                         ("chunks",               Chunks),
                                         ("embedding",            Embedding.tolist()),
                                         ("keywordsPerChunk",     keywordsChunks),
-                                        ("keywordsFullDocument", keywordsDocument),
-                                        ("entitiesPerChunk",     entitiesChunks),
-                                        ("entitiesFullDocument", entitiesDocument)
+                                        ("entitiesPerChunk",     entitiesChunks)                                        
                                        ])
             print(f"   Chunks generados [{len(Chunks):,}]")
+        elif mode == "extended":
+            print(f"   Texto recibido    [{len(text):,}]")
+            # Modalidad para texto largo - dividir en chunks
+            chunks, docEntities, cleanedText = MainObject.GetChunksAndEntities(text)
+            chunksEmbedding                  = MainObject.GetEmbeddings(chunks)
+            chunksKeywords                   = MainObject.GetKeywords(chunks)        
+            chunksEntities                   = MainObject.GetEntities(chunks)        
+            docKeywords                      = MainObject.GetSingleTextKeywords(cleanedText)
+            docEmbedding                     = MainObject.GetSingleEmbedding(cleanedText)
+            
+            response                         = OrderedDict([            
+                                                            ("mode",                  mode),
+                                                            ("chunks",                chunks),
+                                                            ("embedding",             chunksEmbedding.tolist()),
+                                                            ("keywordsPerChunk",      chunksKeywords),
+                                                            ("keywordsFullDocument",  docKeywords),
+                                                            ("entitiesPerChunk",      chunksEntities),
+                                                            ("entitiesFullDocument",  docEntities),
+                                                            ("embeddingFullDocument", docEmbedding.tolist())
+                                                        ])
+            print(f"   Chunks generados [{len(chunks):,}]")
+        elif mode == "full":
+            if "titlebase64" in data_json:
+                title = data_json.get("titlebase64", "")
+                title = base64.b64decode(title)
+                title = title.decode('utf-8')
+            else:
+                title = ""
+                
+            if "summarybase64" in data_json:
+                summary = data_json.get("summarybase64", "")
+                summary = base64.b64decode(summary)
+                summary = summary.decode('utf-8')
+            else:
+                summary = ""
+            print(f"   Datos recibidos   Titulo[{len(title):,}], Resumen[{len(summary):,}], Texto[{len(text):,}]")
+
+            chunks, docEntities, cleanedText = MainObject.GetChunksAndEntities(text)
+            chunksEmbedding                  = MainObject.GetEmbeddings(chunks)
+            chunksKeywords                   = MainObject.GetKeywords(chunks)        
+            chunksEntities                   = MainObject.GetEntities(chunks)        
+            docKeywords                      = MainObject.GetSingleTextKeywords(cleanedText)
+            docEmbedding                     = MainObject.GetSingleEmbedding(cleanedText)
+            
+            if title != "":
+                cleanTitle                   = MainObject.CleanText(title)            
+                titleEmbedding               = MainObject.GetSingleEmbedding(cleanTitle).tolist()
+                titleKeywords                = MainObject.GetSingleTextKeywords(cleanTitle)
+                titleEntities                = MainObject.GetSingleTextEntities(cleanTitle)
+            else:
+                titleEmbedding               = []
+                titleKeywords                = []
+                titleEntities                = []
+                
+            if summary != "":
+                cleanSummary                 = MainObject.CleanText(summary)
+                summaryEmbedding             = MainObject.GetSingleEmbedding(cleanSummary).tolist()
+                summaryKeywords              = MainObject.GetSingleTextKeywords(cleanSummary)
+                summaryEntities              = MainObject.GetSingleTextEntities(cleanSummary)
+            else:
+                summaryEmbedding             = []
+                summaryKeywords              = []
+                summaryEntities              = []
+            response                         = OrderedDict([            
+                                                            ("mode",                  mode),
+                                                            ("chunks",                chunks),
+                                                            ("embedding",             chunksEmbedding.tolist()),
+                                                            ("keywordsPerChunk",      chunksKeywords),
+                                                            ("keywordsFullDocument",  docKeywords),
+                                                            ("entitiesPerChunk",      chunksEntities),
+                                                            ("entitiesFullDocument",  docEntities),
+                                                            ("embeddingFullDocument", docEmbedding.tolist()),
+                                                            ("titleEmbedding",        titleEmbedding),
+                                                            ("titleKeywords",         titleKeywords),
+                                                            ("titleEntities",         titleEntities),
+                                                            ("summaryEmbedding",      summaryEmbedding),
+                                                            ("summaryKeywords",       summaryKeywords),
+                                                            ("summaryEntities",       summaryEntities)                                                            
+                                                         ])
+            print(f"   Chunks generados [{len(chunks):,}]")
         return jsonify(response)
     
     except Exception as e:
@@ -154,7 +234,7 @@ def entities():
 @app.route('/health', methods=['GET'])
 @app.route('/', methods=['GET'])
 def health_check():
-    return jsonify({"status": "ok", "message": "Servicio funcionando correctamente. Version 1.0.2."})
+    return jsonify({"status": "ok", "message": "Servicio funcionando correctamente. Version 1.0.3."})
 
 @app.route('/test', methods=['GET'])
 def simple_test():
@@ -182,7 +262,7 @@ if __name__ == '__main__':
     # En desarrollo, usar debug=True
     # Para producción, cambiar a host='0.0.0.0' para aceptar conexiones externas
     
-    # # Códigos ANSI para colores y formatos
+    # Códigos ANSI para colores y formatos
     # RED   = "\033[91m"  # Texto rojo
     # BOLD  = "\033[1m"   # Texto en negrita
     # RESET = "\033[0m"   # Resetear todos los formatos

@@ -93,6 +93,36 @@ Ejemplo:
  - Se evitan las entidades de etiqueta 'MISC'. 
 ---
 
+## **Actualización 20 Mayo 2025**
+Se agregan 2 modos en la ruta ***/process*** del WebService:
+- Modo: **extended**
+Hace lo mismo que en el modo **chunks**, pero también genera
+    * *keywordsFullDocument* Lista de Keywords de todo el documento.
+    * *entitiesFullDocument* Lista de entidades de todo el documento. 
+    * *embeddingFullDocument* Embedding de todo el documento.
+
+- Modo : **full**
+    Es igual que en **extended**, pero además permite generar los *embeddings*, *keywords* y *entidades* de un *título* y un *resumen* separados del *texto completo*. Por lo que espera los siguientes parámetros extra en el POST, aunque no son obligatorios:
+    * *titlebase64*. Título en *base64*.
+    * *summarybase64*. Resumen en *base64*.
+
+    Por lo que se agregarían 6 datos extra en la respuesta:
+    * *titleEmbedding*
+    * *titleKeywords*
+    * *titleEntities*
+    * *summaryEmbedding*
+    * *summaryKeywords*
+    * *summaryEntities*
+
+Estos 2 nuevos *modos* de la misma ruta ***/process*** del WebService, permitiría generar índices vectoriales con mucha información detallada en los metadatos, o incluso poder crear índices vectoriales complejos con esquemas de campos anidados.
+
+**Esto permitiría búsquedas sobre los datos muy potentes y variadas: búsquedas por keywords, búsquedas por entidades, clasificación de documentos, búsquedas semánticas sólo por *título* y/ó *resumen*, comparación de documentos completos similares, etc**.
+
+Además que habría información extra muy útil para enviarse a un LLM en caso de que se esté creando un RAG, como de entidades y keywords.
+
+*Entendemos que las llamadas al WebService para estos cálculos, pueden ser muy demandantes en recursos e incluso en tiempo, por lo que se da opción a usar el modo que mejor se adapte a las necesidades de cáda índice.*
+
+
 
 ## Modelo de Embeddings
 Se utiliza el modelo ***paraphrase-multilingual-MiniLM-L12-v2***, que es de tamaño medio y funcional para texto en varios idiomas (inglés y español incluidos). Con este modelo se generan vectores de 384 dimensiones.
