@@ -251,3 +251,4 @@ A diferencia de las pruebas anteriores, aqui no se indica el puerto 5000.
   - Verás el ***Embedding*** de resultado, con el texto recibido ya limpio.
   - Se usa *Base64*, porque el texto puede contener caracteres que pueden chocar con el esquema de una URL correcta o de un JSON bien formado. Aplica igual para el caso de los datos JSON recibidos en los *POST*.
   - Es posible que textos muy largos en *Base64*, sobrepasen el límite para *GET* de ***/test***, por si vas a probar textos propios en sea ruta **/test**.
+  - Aqui ya verías los nuevos Keywords y Entities.
