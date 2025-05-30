@@ -186,6 +186,10 @@ Si quieres tener la aplicación funcionando en tu entorno de desarrollo:
 
        ```waitress-serve --host=0.0.0.0 --port=5000 app:app```
 
+       ó 
+
+       ```python -m waitress --host=127.0.0.1 --port=8080 app:app```
+
 - Ver prueba básica de creación de embedding en la última sección del documento.
 - Con la demostración exitosa de la prueba; puedes ya hacer *POST* a la ruta **/process** para trabajar. 
 
