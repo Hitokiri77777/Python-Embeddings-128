@@ -210,8 +210,14 @@ class ChunksAndEmbeddings:
         doc = self.nlp(Text)
         
         #Aprovechamos que ya se tiene ese doc creado, para obtener las entidades
-        Entities = [{"text": ent.text, "label": ent.label_} for ent in doc.ents if ent.label_ not in ("MISC")]
-        Entities = [{"text": ent.text, "label": ent.label_} for ent in doc.ents if ent.label_ not in ("MISC")]
+        # Usamos un set para eliminar duplicados
+        entidades_set = set(
+            (ent.text, ent.label_) 
+            for ent in doc.ents 
+            if ent.label_ != "MISC"
+        )
+        # Convertimos de nuevo a lista de diccionarios
+        Entities = [{"text": text, "label": label} for text, label in entidades_set]
 
         # Dividir el texto en oraciones
         sentences = [sent.text for sent in doc.sents]
