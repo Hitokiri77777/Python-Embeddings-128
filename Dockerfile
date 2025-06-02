@@ -52,7 +52,8 @@ USER appuser
 # Configurar variables de entorno
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    HF_HOME=/home/appuser/.cache/huggingface
+    HF_HOME=/home/appuser/.cache/huggingface \
+    NLTK_DATA=/usr/local/share/nltk_data
 
 # Descargar el modelo con el usuario correcto la primera vez que se inicia el contenedor
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')"
