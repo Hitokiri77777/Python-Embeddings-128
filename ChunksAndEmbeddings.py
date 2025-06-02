@@ -16,9 +16,9 @@ class ChunksAndEmbeddings:
 
     def Load_LanguageModel(self):
         # Cargar modelo de embeddings desde disco duro
-        self.EmbeddigModel = SentenceTransformer("../ModelosIA/paraphrase-multilingual-MiniLM-L12-v2", )
+        #self.EmbeddigModel = SentenceTransformer("../ModelosIA/paraphrase-multilingual-MiniLM-L12-v2", )
         # Cargar modelo de embeddings desde internet (Así debe usarse cuando se ejecuta desde Docker)
-        #self.EmbeddigModel = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+        self.EmbeddigModel = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
 
         #Mismo modelo cargado, se usa para KeyBERT
         self.KeyBertModel  = KeyBERT(self.EmbeddigModel)
