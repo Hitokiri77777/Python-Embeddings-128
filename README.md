@@ -122,7 +122,29 @@ Además que habría información extra muy útil para enviarse a un LLM en caso 
 
 *Entendemos que las llamadas al WebService para estos cálculos, pueden ser muy demandantes en recursos e incluso en tiempo, por lo que se da opción a usar el modo que mejor se adapte a las necesidades de cáda índice.*
 
+## **Actualización 23 Septiembre 2025**
+ ### Entidades NER
+ Se agregan patrones personalizados de Entidades NER; no incluidas en el modelo ***es_core_news_md*** usado.
+  * Tratados comerciales
+  * Organismos y dependencias
+  * Partidos políticos
+  * Programas y políticas públicas
+  * Empresas e instituciones relevantes en México
+  * Medios de comunicación
+  * Figuras políticas muy frecuentes
+  * Tecnologías y conceptos
+  * Inteligencia Artificial
 
+### Keywords
+Lógica para extraer Keywords se mejora. Se intenta método ***MMR*** basado en un factor discreto (se usa Factor=0.6, entre diversidad y relevancia). Si el método falla, se intentaría sin uso de ***MMR***. Ambos casos, siempre buscando palabras individuales, no frases
+
+### Lematización de Keywords
+ - Se aplican patrones de corrección en español
+ - Se corrigen verbos mal lematizados terminados en -ir y en -ar.
+ - Se agrega una lista de correcciones a palabras puntuales.
+ - Se agrega una lista de anglicismos.
+ - Se agrega una lista de palabras con acentos
+ - Se agrega lista de términos de nombre propios y errores comunes. 
 
 ## Modelo de Embeddings
 Se utiliza el modelo ***paraphrase-multilingual-MiniLM-L12-v2***, que es de tamaño medio y funcional para texto en varios idiomas (inglés y español incluidos). Con este modelo se generan vectores de 384 dimensiones.

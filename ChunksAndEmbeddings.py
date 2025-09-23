@@ -356,8 +356,7 @@ class ChunksAndEmbeddings:
             (re.compile(r'^microsofto$',     re.IGNORECASE), 'microsoft'),
             (re.compile(r'^googleo$',        re.IGNORECASE), 'google'),
             (re.compile(r'^applo$',          re.IGNORECASE), 'apple'),
-            (re.compile(r'^américo$',        re.IGNORECASE), 'américa'),
-            
+            (re.compile(r'^américo$',        re.IGNORECASE), 'américa') 
         ]
 
     def GetSingleTextEntities(self, text):
@@ -420,7 +419,7 @@ class ChunksAndEmbeddings:
             {"label": "ORG", "pattern": "CONAGUA"},
             {"label": "ORG", "pattern": "STPS"},
             {"label": "ORG", "pattern": "SECTUR"},
-            #Partidos políticos
+            # --- Partidos políticos ---
             {"label": "ORG", "pattern": "PRI"},
             {"label": "ORG", "pattern": "PAN"},
             {"label": "ORG", "pattern": "PRD"},
@@ -428,12 +427,12 @@ class ChunksAndEmbeddings:
             {"label": "ORG", "pattern": "PT"},
             {"label": "ORG", "pattern": "MC"},
             {"label": "ORG", "pattern": "Morena"},
-            #Programas y políticas públicas
+            # --- Programas y políticas públicas ---
             {"label": "MISC", "pattern": "Bienestar"},
             {"label": "MISC", "pattern": "Sembrando Vida"},
             {"label": "MISC", "pattern": "Jóvenes Construyendo el Futuro"},
             {"label": "MISC", "pattern": "Becas Benito Juárez"},
-            #Empresas e instituciones relevantes en México
+            # --- Empresas e instituciones relevantes en México ---
             {"label": "ORG", "pattern": "Telmex"},
             {"label": "ORG", "pattern": "Telcel"},
             {"label": "ORG", "pattern": "América Móvil"},
@@ -443,7 +442,7 @@ class ChunksAndEmbeddings:
             {"label": "ORG", "pattern": "Banamex"},
             {"label": "ORG", "pattern": "BBVA"},
             {"label": "ORG", "pattern": "Santander"},
-            #Medios de comunicación
+            # --- Medios de comunicación ---
             {"label": "ORG", "pattern": "Televisa"},
             {"label": "ORG", "pattern": "TV Azteca"},
             {"label": "ORG", "pattern": "Milenio"},
@@ -451,25 +450,25 @@ class ChunksAndEmbeddings:
             {"label": "ORG", "pattern": "Reforma"},
             {"label": "ORG", "pattern": "La Jornada"},
             {"label": "ORG", "pattern": "El Norte"},
-            #Figuras políticas muy frecuentes
+            # --- Figuras políticas muy frecuentes ---
             {"label": "PER", "pattern": "CSP"},
             {"label": "PER", "pattern": "AMLO"},
-            {"label": "PER", "pattern": [{"LOWER": "claudia"}, {"LOWER": "sheinbaum"}], "id": "Claudia Sheinbaum"},
-            {"label": "PER", "pattern": [{"LOWER": "csp"}], "id": "Claudia Sheinbaum"},            
-            {"label": "PER", "pattern": [{"LOWER": "marcelo"}, {"LOWER": "ebrard"}], "id": "Marcelo Ebrard"},
-            {"label": "PER", "pattern": [{"LOWER": "xóchitl"}, {"LOWER": "gálvez"}], "id": "Xóchitl Gálvez"},
+            {"label": "PER", "pattern": [{"LOWER": "claudia"}, {"LOWER": "sheinbaum"}],  "id": "Claudia Sheinbaum"},
+            {"label": "PER", "pattern": [{"LOWER": "csp"}],                              "id": "Claudia Sheinbaum"},            
+            {"label": "PER", "pattern": [{"LOWER": "marcelo"}, {"LOWER": "ebrard"}],     "id": "Marcelo Ebrard"},
+            {"label": "PER", "pattern": [{"LOWER": "xóchitl"}, {"LOWER": "gálvez"}],     "id": "Xóchitl Gálvez"},
     
-            {"label": "PER", "pattern": [{"LOWER": "felipe"}, {"LOWER": "calderón"}], "id": "Felipe Calderón Hinojosa"},
-            {"label": "PER", "pattern": [{"LOWER": "calderón"}],                      "id": "Felipe Calderón Hinojosa"},
-            {"label": "PER", "pattern": [{"LOWER": "fch"}],                           "id": "Felipe Calderón Hinojosa"},
+            {"label": "PER", "pattern": [{"LOWER": "felipe"}, {"LOWER": "calderón"}],    "id": "Felipe Calderón Hinojosa"},
+            {"label": "PER", "pattern": [{"LOWER": "calderón"}],                         "id": "Felipe Calderón Hinojosa"},
+            {"label": "PER", "pattern": [{"LOWER": "fch"}],                              "id": "Felipe Calderón Hinojosa"},
 
-            {"label": "PER", "pattern": [{"LOWER": "vicente"}, {"LOWER": "fox"}],     "id": "Vicente Fox"},
-            {"label": "PER", "pattern": [{"LOWER": "ernesto"}, {"LOWER": "zedillo"}], "id": "Ernesto Zedillo"},
-            {"label": "PER", "pattern": [{"LOWER": "luis"}, {"LOWER": "echeverría"}], "id": "Luis Echeverría"},
-            {"label": "PER", "pattern": [{"LOWER": "enrique"}, {"LOWER": "peña"}, {"LOWER": "nieto"}], "id": "Enrique Peña Nieto"},
-            {"label": "PER", "pattern": [{"TEXT":  "Andrés"},  {"TEXT": "Andres"},{"TEXT": "Manuel"},{"TEXT": "López"}, {"TEXT": "Lopez"}, {"TEXT": "Obrador"}]},
-            {"label": "PER", "pattern": [{"LOWER": "andrés"}, {"LOWER": "manuel"}, {"LOWER": "lópez"}, {"LOWER": "obrador"}], "id": "Andrés Manuel López Obrador"},
-            {"label": "PER", "pattern": [{"LOWER": "amlo"}], "id": "AMLO"}
+            {"label": "PER", "pattern": [{"LOWER": "vicente"}, {"LOWER": "fox"}],        "id": "Vicente Fox"},
+            {"label": "PER", "pattern": [{"LOWER": "ernesto"}, {"LOWER": "zedillo"}],    "id": "Ernesto Zedillo"},
+            {"label": "PER", "pattern": [{"LOWER": "luis"},    {"LOWER": "echeverría"}], "id": "Luis Echeverría"},
+            {"label": "PER", "pattern": [{"LOWER": "enrique"}, {"LOWER": "peña"},   {"LOWER": "nieto"}], "id": "Enrique Peña Nieto"},
+            {"label": "PER", "pattern": [{"TEXT":  "Andrés"},  {"TEXT": "Andres"},  {"TEXT": "Manuel"}, {"TEXT": "López"}, {"TEXT": "Lopez"}, {"TEXT": "Obrador"}]},
+            {"label": "PER", "pattern": [{"LOWER": "andrés"},  {"LOWER": "manuel"}, {"LOWER": "lópez"}, {"LOWER": "obrador"}], "id": "Andrés Manuel López Obrador"},
+            {"label": "PER", "pattern": [{"LOWER": "amlo"}],                             "id": "AMLO"}
         ]
         # --- Tecnologías y conceptos ---
         patterns_tecnologia = [
