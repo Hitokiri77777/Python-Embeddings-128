@@ -124,7 +124,7 @@ Además que habría información extra muy útil para enviarse a un LLM en caso 
 
 ## **Actualización 23 Septiembre 2025**
  ### Entidades NER
- Se agregan patrones personalizados de Entidades NER; no incluidas en el modelo ***es_core_news_md*** usado.
+ Se agregan patrones personalizados de Entidades NER; no incluidas en el modelo ***es_core_news_md*** usado. Además ya se toman las entidades *miscelaneas* que se evitaban.
   * Tratados comerciales
   * Organismos y dependencias
   * Partidos políticos
