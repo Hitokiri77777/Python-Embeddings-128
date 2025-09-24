@@ -356,7 +356,8 @@ class ChunksAndEmbeddings:
             (re.compile(r'^microsofto$',     re.IGNORECASE), 'microsoft'),
             (re.compile(r'^googleo$',        re.IGNORECASE), 'google'),
             (re.compile(r'^applo$',          re.IGNORECASE), 'apple'),
-            (re.compile(r'^américo$',        re.IGNORECASE), 'américa') 
+            (re.compile(r'^américo$',        re.IGNORECASE), 'américa'),
+            (re.compile(r'^chino$',          re.IGNORECASE), 'china') 
         ]
 
     def GetSingleTextEntities(self, text):
