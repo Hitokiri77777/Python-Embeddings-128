@@ -1,5 +1,5 @@
 #Etapa 1. Sirve para copilar, descargar e instalar lo necesario
-FROM python:3.9-slim-buster AS builder
+FROM python:3.9-slim-bookworm AS builder
 
 WORKDIR /app
 COPY requirements.txt .
@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Etapa 2. La que realmente se usará
-FROM python:3.9-slim-buster
+FROM python:3.9-slim-bookworm
 
 # Crear el usuario appuser primero
 RUN useradd -m appuser && \
