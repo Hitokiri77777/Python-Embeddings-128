@@ -22,8 +22,8 @@ class ChunksAndEmbeddings:
             # Cargar modelo de embeddings desde internet (Así debe usarse cuando se ejecuta desde Docker)
             model_path = "paraphrase-multilingual-MiniLM-L12-v2"
             environment = "DOCKER/PRODUCTION"
-        elif self._is_local_model_available():
-            # Cargar modelo de embeddings desde disco duro
+        elif Path("../ModelosIA/paraphrase-multilingual-MiniLM-L12-v2").exists():
+            # Cargar modelo de embeddings en Desarrollo desde disco duro
             model_path = "../ModelosIA/paraphrase-multilingual-MiniLM-L12-v2"
             environment = "DEVELOPMENT (local model)"
         else:
@@ -31,17 +31,22 @@ class ChunksAndEmbeddings:
             model_path = "paraphrase-multilingual-MiniLM-L12-v2"
             environment = "DEVELOPMENT (remote model)"
         
-        print(f"🔍 Entorno detectado: {environment}")
-        print(f"📁 Cargando modelo desde: {model_path}")
+        # Analizar antes de cargar
+        model_info = self._analyze_model_path(model_path)
+        
+        print(f" 🔍 Entorno detectado: {environment}")
+        print(f" 📁 Modelo solicitado: {model_path}")
+        print(f" 🎯 Origen del modelo: {model_info['source']}")
+        print(f" 📍 {model_info['description']}")
         
         try:
             self.EmbeddigModel = SentenceTransformer(model_path)
-            print("✅ Modelo cargado exitosamente")
+            print(" ✅ Modelo cargado exitosamente")
         except Exception as e:
-            print(f"❌ Error cargando modelo: {e}")
+            print(f" ❌ Error cargando modelo: {e}")
             # Fallback: intentar con modelo remoto si falla el local
             if model_path != "paraphrase-multilingual-MiniLM-L12-v2":
-                print("🔄 Intentando fallback con modelo remoto...")
+                print(" 🔄 Intentando fallback con modelo remoto...")
                 self.EmbeddigModel = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
             else:
                 raise
@@ -621,30 +626,67 @@ class ChunksAndEmbeddings:
             Chunks[i] = re.sub(r'^[\\r\\n]+', '', Chunks[i]).strip()
             
         return Chunks, Entities, Text
-    
-    def _is_running_in_docker(self):
-        """Detecta si la aplicación se ejecuta dentro de Docker"""
-        # Método 1: Verificar archivo .dockerenv
-        if Path('/.dockerenv').exists():
-            print("Método 1: Verificar archivo .dockerenv: '/.dockerenv' does exist")
-            return True
-        
-        # Método 2: Verificar si estamos en un contenedor
-        try:
-            with open('/proc/1/cgroup', 'rt') as f:
-                print("Método 2: Verificar si estamos en un contenedor 'docker' in '/proc/1/cgroup'")
-                return 'docker' in f.read()
-        except:
-            pass
-        
-        # Método 3: Variable de entorno común en Docker
-        if os.getenv('DOCKER_CONTAINER'):
-            print("Método 3: 'Variable de entorno común en Docker: 'DOCKER_CONTAINER'")
-            return True
-        
-        return False
-    
+   
     def _is_local_model_available(self):
         """Verifica si el modelo local existe"""
         local_path = Path("../ModelosIA/paraphrase-multilingual-MiniLM-L12-v2")
         return local_path.exists()
+    
+    def _get_cache_directory(self):
+        """Obtiene el directorio de caché de sentence-transformers"""
+        # Orden de prioridad para el caché:
+        # 1. Variable de entorno SENTENCE_TRANSFORMERS_HOME
+        # 2. Variable de entorno XDG_CACHE_HOME + /sentence_transformers
+        # 3. ~/.cache/torch/sentence_transformers (Linux/Mac)
+        # 4. %LOCALAPPDATA%/torch/sentence_transformers (Windows)
+        
+        if 'SENTENCE_TRANSFORMERS_HOME' in os.environ:
+            return Path(os.environ['SENTENCE_TRANSFORMERS_HOME'])
+        elif 'XDG_CACHE_HOME' in os.environ:
+            return Path(os.environ['XDG_CACHE_HOME']) / 'sentence_transformers'
+        else:
+            # Default locations
+            if os.name == 'nt':  # Windows
+                cache_dir = Path.home() / 'AppData' / 'Local' / 'torch' / 'sentence_transformers'
+            else:  # Linux/Mac
+                cache_dir = Path.home() / '.cache' / 'torch' / 'sentence_transformers'
+            return cache_dir
+    
+    def _analyze_model_path(self, model_path):
+        """Analiza de dónde vendrá el modelo"""
+        cache_dir = self._get_cache_directory()
+        
+        # Caso 1: Path local absoluto o relativo
+        local_path = Path(model_path)
+        if local_path.exists() and (local_path.is_dir() or local_path.suffix):
+            return {
+                'source': 'LOCAL_PATH',
+                'full_path': local_path.absolute(),
+                'size_mb': sum(f.stat().st_size for f in local_path.rglob('*') if f.is_file()) / (1024*1024),
+                'description': f'Modelo local en: {local_path.absolute()}'
+            }
+        
+        # Caso 2: Modelo en caché
+        # sentence-transformers usa el nombre del modelo como carpeta
+        model_name = model_path.replace('/', '--')  # Los "/" se convierten en "--"
+        cached_path = cache_dir / model_name
+        
+        if cached_path.exists():
+            return {
+                'source': 'CACHED',
+                'full_path': cached_path,
+                'size_mb': sum(f.stat().st_size for f in cached_path.rglob('*') if f.is_file()) / (1024*1024),
+                'description': f'Modelo en caché: {cached_path}'
+            }
+        
+        # Caso 3: Se descargará de HuggingFace
+        return {
+            'source': 'DOWNLOAD_REQUIRED',
+            'full_path': cached_path,  # Donde se guardará
+            'size_mb': 'Unknown',
+            'description': f'Se descargará de HuggingFace y guardará en: {cached_path}'
+        }
+    
+    def _is_running_in_docker(self):
+        """Detecta si está en Docker"""
+        return Path('/.dockerenv').exists()
