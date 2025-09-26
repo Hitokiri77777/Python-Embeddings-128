@@ -9,6 +9,7 @@ import faiss
 import spacy
 import re 
 import os
+import time
 
 
 class ChunksAndEmbeddings:
@@ -39,17 +40,51 @@ class ChunksAndEmbeddings:
         print(f" 🎯 Origen del modelo: {model_info['source']}")
         print(f" 📍 {model_info['description']}")
         
+        if model_info['size_mb'] != 'Unknown':
+            print(f" 💾 Tamaño: {model_info['size_mb']:.1f} MB")
+        
+        if model_info['source'] == 'DOWNLOAD_REQUIRED':
+            print(" ⏬ INICIANDO DESCARGA...")
+            
+        start_time = time.time()
+        
         try:
             self.EmbeddigModel = SentenceTransformer(model_path)
-            print(" ✅ Modelo cargado exitosamente")
+            load_time = time.time() - start_time
+            
+            # Información post-carga
+            actual_path = self.EmbeddigModel._modules['0'].auto_model.config._name_or_path
+            
+            print(f" ✅ Modelo cargado exitosamente")
+            print(f" ⏱️  Tiempo de carga: {load_time:.2f} segundos")
+            print(f" 🔧 Path interno del modelo: {actual_path}")
+            
+            # Verificar si se creó caché nuevo
+            if model_info['source'] == 'DOWNLOAD_REQUIRED':
+                if model_info['full_path'].exists():
+                    new_size = sum(f.stat().st_size for f in model_info['full_path'].rglob('*') if f.is_file()) / (1024*1024)
+                    print(f" 💾 Modelo descargado y cacheado ({new_size:.1f} MB)")
+                    print(f" 📂 Ubicación del caché: {model_info['full_path']}")
+            
+            return {
+                'success': True,
+                'source': model_info['source'],
+                'load_time': load_time,
+                'cache_path': model_info['full_path']
+            }
+            
         except Exception as e:
-            print(f" ❌ Error cargando modelo: {e}")
-            # Fallback: intentar con modelo remoto si falla el local
-            if model_path != "paraphrase-multilingual-MiniLM-L12-v2":
-                print(" 🔄 Intentando fallback con modelo remoto...")
-                self.EmbeddigModel = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
-            else:
-                raise
+            load_time = time.time() - start_time
+            print(f" ❌ Error cargando modelo después de {load_time:.2f}s: {e}")
+            
+            # Información adicional de debug
+            if model_info['source'] == 'LOCAL_PATH':
+                print("💡 Verifica que el path local sea correcto y contenga todos los archivos del modelo")
+            elif model_info['source'] == 'DOWNLOAD_REQUIRED':
+                print("💡 Verifica conexión a internet y permisos de escritura en directorio caché")
+                print(f"📂 Directorio caché: {self._get_cache_directory()}")
+            
+            raise
 
         #Mismo modelo cargado, se usa para KeyBERT
         self.KeyBertModel  = KeyBERT(self.EmbeddigModel)
