@@ -4,6 +4,7 @@ from   bs4                      import BeautifulSoup
 from   keybert                  import KeyBERT
 from   nltk.corpus              import stopwords
 from   flask                    import jsonify
+from   pathlib                  import Path
 import faiss
 import spacy
 import re 
@@ -16,10 +17,34 @@ class ChunksAndEmbeddings:
         self.PCA_Matrix_Trained  = faiss.read_VectorTransform(self.PCA_Matrix_FileName)
 
     def Load_LanguageModel(self):
-        # Cargar modelo de embeddings desde disco duro
-        #self.EmbeddigModel = SentenceTransformer("../ModelosIA/paraphrase-multilingual-MiniLM-L12-v2", )
-        # Cargar modelo de embeddings desde internet (Así debe usarse cuando se ejecuta desde Docker)
-        self.EmbeddigModel = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+        # Lógica de selección automática
+        if self._is_running_in_docker():
+            # Cargar modelo de embeddings desde internet (Así debe usarse cuando se ejecuta desde Docker)
+            model_path = "paraphrase-multilingual-MiniLM-L12-v2"
+            environment = "DOCKER/PRODUCTION"
+        elif self._is_local_model_available():
+            # Cargar modelo de embeddings desde disco duro
+            model_path = "../ModelosIA/paraphrase-multilingual-MiniLM-L12-v2"
+            environment = "DEVELOPMENT (local model)"
+        else:
+            # Por si estamos en Desarrollo y no existe el modelo en disco duro
+            model_path = "paraphrase-multilingual-MiniLM-L12-v2"
+            environment = "DEVELOPMENT (remote model)"
+        
+        print(f"🔍 Entorno detectado: {environment}")
+        print(f"📁 Cargando modelo desde: {model_path}")
+        
+        try:
+            self.EmbeddigModel = SentenceTransformer(model_path)
+            print("✅ Modelo cargado exitosamente")
+        except Exception as e:
+            print(f"❌ Error cargando modelo: {e}")
+            # Fallback: intentar con modelo remoto si falla el local
+            if model_path != "paraphrase-multilingual-MiniLM-L12-v2":
+                print("🔄 Intentando fallback con modelo remoto...")
+                self.EmbeddigModel = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+            else:
+                raise
 
         #Mismo modelo cargado, se usa para KeyBERT
         self.KeyBertModel  = KeyBERT(self.EmbeddigModel)
@@ -597,3 +622,29 @@ class ChunksAndEmbeddings:
             
         return Chunks, Entities, Text
     
+    def _is_running_in_docker(self):
+        """Detecta si la aplicación se ejecuta dentro de Docker"""
+        # Método 1: Verificar archivo .dockerenv
+        if Path('/.dockerenv').exists():
+            print("Método 1: Verificar archivo .dockerenv: '/.dockerenv' does exist")
+            return True
+        
+        # Método 2: Verificar si estamos en un contenedor
+        try:
+            with open('/proc/1/cgroup', 'rt') as f:
+                print("Método 2: Verificar si estamos en un contenedor 'docker' in '/proc/1/cgroup'")
+                return 'docker' in f.read()
+        except:
+            pass
+        
+        # Método 3: Variable de entorno común en Docker
+        if os.getenv('DOCKER_CONTAINER'):
+            print("Método 3: 'Variable de entorno común en Docker: 'DOCKER_CONTAINER'")
+            return True
+        
+        return False
+    
+    def _is_local_model_available(self):
+        """Verifica si el modelo local existe"""
+        local_path = Path("../ModelosIA/paraphrase-multilingual-MiniLM-L12-v2")
+        return local_path.exists()
