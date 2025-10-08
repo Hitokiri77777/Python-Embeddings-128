@@ -59,6 +59,32 @@ class ChunksAndEmbeddings:
             print(f" ⏱️  Tiempo de carga: {load_time:.2f} segundos")
             print(f" 🔧 Path interno del modelo: {actual_path}")
             
+            #Mismo modelo cargado, se usa para KeyBERT
+            self.KeyBertModel  = KeyBERT(self.EmbeddigModel)
+            # Cargar modelo de Spacy para español
+            self.nlp = spacy.load("es_core_news_md")
+            
+            #Se agregan entidades propias, que el modelo "es_core_news_md" no tiene
+            self._add_custom_entities()
+            
+            # Añadir reglas para abreviaturas
+            abreviaturas = ["Sr.", "Sra.", "Dr.", "Dra.", "vs.", "1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9."]
+            for abrev in abreviaturas:
+                self.nlp.tokenizer.add_special_case(abrev, [{"ORTH": abrev}])
+                
+            #Se cargan los corpus de stopwords en inglés y español de nltk (son más de 500 entre ambas)
+            # Para pruebas en ambientes de desarrollo. Debe existir folder \venv\nltk_data\corpora\stopwords
+            # descargado desde https://raw.githubusercontent.com/nltk/nltk_data/gh-pages/packages/corpora/stopwords.zip 
+            # ó bien hacer antes nltk.download('stopwords')  Se requiere: import nltk
+            english_sw = set(stopwords.words('english'))
+            spanish_sw = set(stopwords.words('spanish'))
+
+            # Unimos ambas listas en una
+            self.StopwordsList = list(english_sw.union(spanish_sw))
+            
+            # Patrones regex sistemáticos para correcciones en lematización
+            self._Lematizacion_load_correction_patterns()   
+            
             # Verificar si se creó caché nuevo
             if model_info['source'] == 'DOWNLOAD_REQUIRED':
                 if model_info['full_path'].exists():
@@ -86,32 +112,6 @@ class ChunksAndEmbeddings:
             
             raise
 
-        #Mismo modelo cargado, se usa para KeyBERT
-        self.KeyBertModel  = KeyBERT(self.EmbeddigModel)
-        # Cargar modelo de Spacy para español
-        self.nlp = spacy.load("es_core_news_md")
-        
-        #Se agregan entidades propias, que el modelo "es_core_news_md" no tiene
-        self._add_custom_entities()
-        
-        # Añadir reglas para abreviaturas
-        abreviaturas = ["Sr.", "Sra.", "Dr.", "Dra.", "vs.", "1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9."]
-        for abrev in abreviaturas:
-            self.nlp.tokenizer.add_special_case(abrev, [{"ORTH": abrev}])
-            
-        #Se cargan los corpus de stopwords en inglés y español de nltk (son más de 500 entre ambas)
-        # Para pruebas en ambientes de desarrollo. Debe existir folder \venv\nltk_data\corpora\stopwords
-        # descargado desde https://raw.githubusercontent.com/nltk/nltk_data/gh-pages/packages/corpora/stopwords.zip 
-        # ó bien hacer antes nltk.download('stopwords')  Se requiere: import nltk
-        english_sw = set(stopwords.words('english'))
-        spanish_sw = set(stopwords.words('spanish'))
-
-        # Unimos ambas listas en una
-        self.StopwordsList = list(english_sw.union(spanish_sw))
-        
-        # Patrones regex sistemáticos para correcciones en lematización
-        self._Lematizacion_load_correction_patterns()        
-        
     def CleanText(self, Text):
         if Text == None:
             return ""
@@ -422,7 +422,8 @@ class ChunksAndEmbeddings:
             (re.compile(r'^googleo$',        re.IGNORECASE), 'google'),
             (re.compile(r'^applo$',          re.IGNORECASE), 'apple'),
             (re.compile(r'^américo$',        re.IGNORECASE), 'américa'),
-            (re.compile(r'^chino$',          re.IGNORECASE), 'china') 
+            (re.compile(r'^chino$',          re.IGNORECASE), 'china'),
+            (re.compile(r'^adar$',           re.IGNORECASE), 'adan') 
         ]
 
     def GetSingleTextEntities(self, text):
