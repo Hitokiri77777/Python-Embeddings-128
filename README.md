@@ -556,7 +556,7 @@ esta opción resulta suficiente y predecible.
 
 #### Ventajas del esquema actual
 
-- **Sin SPOF de balanceador:** si un nodo cae, solo se ven afectados los
+- **Sin dependencia de un balanceador:** si un nodo cae, solo se ven afectados los
   índices configurados contra ese nodo; se pueden reconfigurar al otro nodo
   de forma manual.
 - **Latencia predecible:** cada cliente "sabe" a qué IP ir siempre; no hay
