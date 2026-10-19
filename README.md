@@ -1,276 +1,623 @@
-# Creador de Embeddings local para ***Búsqueda Semántica***
-Crea embeddings usando el modelo de lenguaje natural ***paraphrase-multilingual-MiniLM-L12-v2***, usando un WebService REST como interfaz.
+# Servicio NLP Local para Búsqueda Semántica y RAG
 
-### En la ruta ***/process*** del WebService
-Recibe un POST, esperando 2 parámetros:
-- mode: Que puede ser (single | chunks)
-- textbase64: Sería el texto en Base64
+**Embeddings 128-D + Keywords + Entidades NER + Chunking Semántico**, expuesto como
+WebService REST con Flask y desplegable con Docker (Flask + Waitress + NGINX).
 
-Ejemplo:
-```json
-    {
-        "mode": "single",
-        "textbase64": "SG9sYSBNdW5kbyE="
-    }
-```
+Servicio de procesamiento de lenguaje natural (NLP) que corre **completamente local**
+(sin llamadas a APIs externas de terceros) y que, a partir de un texto recibido en
+*Base64*, devuelve una o varias de las siguientes salidas, según el endpoint o modo
+invocado:
 
+- **Embeddings** reducidos de 384 a 128 dimensiones vía PCA.
+- **Keywords** del documento (hasta 12 por defecto, configurable hasta 20).
+- **Entidades NER** (Named Entity Recognition) con patrones personalizados.
+- **Chunking semántico** del texto, con embedding por cada chunk.
+- Opcionalmente, el mismo tratamiento para **título** y **resumen** por separado.
 
-Cuando el **mode** es ***single***, el texto pasado en Base64, se limpia y se crea su embedding. Devolviendo la respuesta con el formato:
-```json
-    {
-        "mode": "single",
-        "text": Texto recibido y limpio,
-        "embedding": arreglo de 128 números de punto flotante.
-    }
-```
+Está pensado para alimentar índices vectoriales, motores de búsqueda semántica,
+pipelines de RAG (Retrieval-Augmented Generation) y clasificación de documentos.
 
-Cuando el **mode** es ***chunks***, el texto pasado en Base64, se limpia, se separa en chunks y a cada chunk se le crea su embedding. La respuesta devuelta tendría el formato siguiente:
-```json
-    {
-        "mode": "chunks",
-        "chunks": Arreglo chunks,
-        "embedding": Arreglo de embeddings
-    }
-```
-
-### En la ruta ***/test*** del WebService
-Con una operación GET, se recibe en el parámetro **base64text**, un texto en *Base64*.
-Retornando una salida con el siguiente formato: 
-```json
-    {
-        "mode": "test",
-        "text": Texto recibido y limpio,
-        "embedding": arreglo de 128 números de punto flotante.
-    }
-```
-Ejemplo de uso: ```http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=```
-
-
-### La ruta ***/health***, igualmente en ***/*** del WebService
-Sirve para comprobar que el servicio esta trabajando.
-
-
-## **Actualización 16 Mayo 2025**
-* Se agrega el cálculo de **Keywords** al procesar *embeddings*; será parte de la respuesta.  Se devolverá un arreglo de hasta 12 keywords por todo el documento. Y máximo 5 por cada chunk generado. 
-* También se agrega la ruta ***/keywords*** al WebService, para el caso donde sólo se necesite este cálculo.
-Recibiendo un POST que espera los parámetros:
-    - textbase64: Sería el texto a procesar en Base64.
-    - quantity: Entero positivo que indique cuantas palabras se devolverían. 12 sería el default si no indica el parámetro o se indica mal. El máximo es 20. La cantidad resultante puede ser menor al lematizar.
-Ejemplo:
-```json
-    {
-        "textbase64": "SG9sYSBNdW5kbyE=",
-        "quantity": 10
-    }
-```
- - Se usa **keybert**, con el mismo modelo **paraphrase-multilingual-MiniLM-L12-v2**.
- - Se aplican **StopWords** en inglés y español de **nltk**.
- - Se lematizan los resultados, para devolver la raiz de la palabra con **Spacy** usando el modelo **es_core_news_md**. Además de evitar repertir con esto palabras parecidas.
- * Prueba básica para **Keywords**: 
- ```
- http://127.0.0.1:5000/test?base64text=RWwgY2FtYmlvIGNsaW3DoXRpY28gZXN0w6EgcHJvdm9jYW5kbyB1biBhdW1lbnRvIGRlbCBuaXZlbCBkZWwgbWFyIHkgZXZlbnRvcyBjbGltw6F0aWNvcyBleHRyZW1vcyBlbiBtdWNoYXMgcGFydGVzIGRlbCBtdW5kby4=
- ```
 ---
 
-## **Actualización 19 Mayo 2025**
-* Se agrega el cálculo de **Entities** también al procesar *embeddings*. Véase NER (Named Entity Recognition), es un componente del procesamiento de lenguaje natural (PLN) que identifica categorías predefinidas de objetos en un texto. Categorías pueden incluir, entre otras, nombres de personas, organizaciones, ubicaciones, expresiones de tiempos, cantidades, códigos médicos, valores monetarios y porcentajes. 
-  - Se retornaría un arreglo de tuplas "(text, label)" que definirán las entidades por todo el documento. Y un arreglo también por cada chunk.
-* También se agrega la ruta ***/entities*** al WebService, para el caso donde sólo se necesite este cálculo. Aqui se recibe un POST con el parámetro **textbase64**: Sería el texto a procesar en Base64.
+## Arquitectura
 
-* Prueba básica para **Entidades**: 
-```
-http://127.0.0.1:5000/test?base64text=R29iaWVybm8gZGUgRXN0YWRvcyBVbmlkb3Mu
-```
+El proyecto puede ejecutarse de dos maneras:
 
-Ejemplo:
-```json
-    {
-        "textbase64": "R29iaWVybm8gZGUgRXN0YWRvcyBVbmlkb3Mu"
-    }
-```
- - Se usa **Spacy** con el modelo **es_core_news_md**.
- - Se evita devolver entidades repetidas.
- - Se evitan las entidades de etiqueta 'MISC'. 
+### 1) Desarrollo local (Flask directo, puerto 5000)
+
+Cliente → Flask (app.py) → puerto 5000
+
+### 2) Producción recomendada (con NGINX como proxy inverso)
+
+Cliente → NGINX :80 → Flask/Waitress :5000 (solo red interna mynetwork)
+
+En el modo de producción:
+
+1. El usuario accede a http://localhost/.
+2. NGINX recibe la solicitud en el puerto 80.
+3. NGINX reenvía la solicitud al contenedor de Flask en backend:5000.
+4. Flask procesa la petición y devuelve la respuesta a NGINX.
+5. NGINX envía la respuesta final al usuario.
+
+Esto se logra con el archivo docker-compose.yml incluido en el repositorio, que
+define dos servicios (flask_app y nginx_proxy) conectados por una red bridge
+aislada (mynetwork). El contenedor de Flask **no publica** el puerto 5000 al
+exterior (solo expose), de modo que únicamente es accesible a través de NGINX.
+
 ---
 
-## **Actualización 20 Mayo 2025**
-Se agregan 2 modos en la ruta ***/process*** del WebService:
-- Modo: **extended**
-Hace lo mismo que en el modo **chunks**, pero también genera
-    * *keywordsFullDocument* Lista de Keywords de todo el documento.
-    * *entitiesFullDocument* Lista de entidades de todo el documento. 
-    * *embeddingFullDocument* Embedding de todo el documento.
+## Endpoints del WebService
 
-- Modo : **full**
-    Es igual que en **extended**, pero además permite generar los *embeddings*, *keywords* y *entidades* de un *título* y un *resumen* separados del *texto completo*. Por lo que espera los siguientes parámetros extra en el POST, aunque no son obligatorios:
-    * *titlebase64*. Título en *base64*.
-    * *summarybase64*. Resumen en *base64*.
+Todos los endpoints que reciben texto lo hacen en **Base64**, para evitar
+problemas con caracteres especiales que romperían URLs o JSON mal formados.
 
-    Por lo que se agregarían 6 datos extra en la respuesta:
-    * *titleEmbedding*
-    * *titleKeywords*
-    * *titleEntities*
-    * *summaryEmbedding*
-    * *summaryKeywords*
-    * *summaryEntities*
+| Método | Ruta | Propósito |
+|---|---|---|
+| POST | /process | Procesamiento principal. Acepta mode ∈ {single, chunks, extended, full}. |
+| POST | /keywords | Solo cálculo de keywords del texto recibido. |
+| POST | /entities | Solo cálculo de entidades NER del texto recibido. |
+| GET  | /test | Prueba rápida con base64text en query string. |
+| GET  | /health y / | Healthcheck del servicio. |
 
-Estos 2 nuevos *modos* de la misma ruta ***/process*** del WebService, permitiría generar índices vectoriales con mucha información detallada en los metadatos, o incluso poder crear índices vectoriales complejos con esquemas de campos anidados.
+---
 
-**Esto permitiría búsquedas sobre los datos muy potentes y variadas: búsquedas por keywords, búsquedas por entidades, clasificación de documentos, búsquedas semánticas sólo por *título* y/ó *resumen*, comparación de documentos completos similares, etc**.
+## POST /process — Contrato actual
 
-Además que habría información extra muy útil para enviarse a un LLM en caso de que se esté creando un RAG, como de entidades y keywords.
+Parámetros comunes:
 
-*Entendemos que las llamadas al WebService para estos cálculos, pueden ser muy demandantes en recursos e incluso en tiempo, por lo que se da opción a usar el modo que mejor se adapte a las necesidades de cáda índice.*
+- mode (string): single | chunks | extended | full.
+- textbase64 (string): texto del documento en Base64.
 
-## **Actualización 23 Septiembre 2025**
- ### Entidades NER
- Se agregan patrones personalizados de Entidades NER; no incluidas en el modelo ***es_core_news_md*** usado. Además ya se toman las entidades *miscelaneas* que se evitaban.
-  * Tratados comerciales
-  * Organismos y dependencias
-  * Partidos políticos
-  * Programas y políticas públicas
-  * Empresas e instituciones relevantes en México
-  * Medios de comunicación
-  * Figuras políticas muy frecuentes
-  * Tecnologías y conceptos
-  * Inteligencia Artificial
+Parámetros opcionales (solo mode=full):
 
-### Keywords
-Lógica para extraer Keywords se mejora. Se intenta método ***MMR*** basado en un factor discreto (se usa Factor=0.6, entre diversidad y relevancia). Si el método falla, se intentaría sin uso de ***MMR***. Ambos casos, siempre buscando palabras individuales, no frases
+- titlebase64 (string): título del documento en Base64.
+- summarybase64 (string): resumen del documento en Base64.
 
-### Lematización de Keywords
- - Se aplican patrones de corrección en español
- - Se corrigen verbos mal lematizados terminados en -ir y en -ar.
- - Se agrega una lista de correcciones a palabras puntuales.
- - Se agrega una lista de anglicismos.
- - Se agrega una lista de palabras con acentos
- - Se agrega lista de términos de nombre propios y errores comunes. 
+Tabla consolidada del contrato actual por modo:
+
+| Modo | Devuelve |
+|---|---|
+| single | mode, text (limpio), embedding (128 floats). |
+| chunks | mode, chunks, embedding (arreglo de embeddings por chunk). Keywords y entities por chunk también se incluyen en la respuesta. |
+| extended | Todo lo de chunks, más keywordsFullDocument, entitiesFullDocument, embeddingFullDocument. |
+| full | Todo lo de extended, más titleEmbedding, titleKeywords, titleEntities, summaryEmbedding, summaryKeywords, summaryEntities (cuando se envían titlebase64 y/o summarybase64). |
+
+### Ejemplo de request
+```json
+{
+    "mode": "single",
+    "textbase64": "SG9sYSBNdW5kbyE="
+}
+```
+
+### Ejemplo de response (mode = single)
+```json
+{
+    "mode": "single",
+    "text": "Texto recibido y limpio",
+    "embedding": [0.0123, -0.0456, "...", 128 valores]
+}
+```
+
+### Ejemplo de response (mode = chunks)
+```json
+{
+    "mode": "chunks",
+    "chunks": ["chunk 1 ...", "chunk 2 ...", "..."],
+    "embedding": [[...128], [...128], "..."]
+}
+```
+### Ejemplo de response (mode = extended)
+
+Además de lo anterior:
+```json
+{
+    "keywordsFullDocument": ["...", "..."],
+    "entitiesFullDocument": [["texto", "LABEL"], ["...", "..."]],
+    "embeddingFullDocument": [...128]
+}
+```
+
+### Ejemplo de response (mode = full)
+
+Además de lo anterior, si se enviaron titlebase64 / summarybase64:
+```json
+{
+    "titleEmbedding": [...128],
+    "titleKeywords": ["...", "..."],
+    "titleEntities": [["texto", "LABEL"], "..."],
+    "summaryEmbedding": [...128],
+    "summaryKeywords": ["...", "..."],
+    "summaryEntities": [["texto", "LABEL"], "..."]
+}
+```
+
+> **Nota sobre costo computacional:** los modos extended y full son
+> significativamente más demandantes en CPU y tiempo que single y chunks.
+> Elige el modo que mejor se adapte a las necesidades de cada índice.
+
+---
+
+## POST /keywords — Solo keywords
+
+Recibe un POST con:
+
+- textbase64 (string): texto a procesar en Base64.
+- quantity (entero positivo, opcional): cuántas palabras devolver.
+  - Default: **12** si no se indica o si el valor es inválido.
+  - Máximo: **20**.
+  - El número resultante puede ser menor tras la lematización.
+
+Ejemplo de request:
+```json
+{
+    "textbase64": "SG9sYSBNdW5kbyE=",
+    "quantity": 10
+}
+```
+
+Detalles internos:
+
+- Se usa **KeyBERT** con el mismo modelo *"paraphrase-multilingual-MiniLM-L12-v2"*.
+- Se aplican **StopWords** en inglés y español de **NLTK**.
+- Se lematizan los resultados con **spaCy** usando el modelo es_core_news_md,
+  devolviendo la raíz de la palabra y evitando repetir palabras parecidas.
+- Desde la actualización del **23 Septiembre 2025**, se intenta el método **MMR**
+  (Maximal Marginal Relevance) con factor discreto **0.6** (balance entre
+  diversidad y relevancia). Si MMR falla, se reintenta sin MMR.
+- En ambos casos se buscan **palabras individuales**, no frases.
+
+Prueba rápida por URL:
+
+```http://127.0.0.1:5000/test?base64text=RWwgY2FtYmlvIGNsaW3DoXRpY28gZXN0w6EgcHJvdm9jYW5kbyB1biBhdW1lbnRvIGRlbCBuaXZlbCBkZWwgbWFyIHkgZXZlbnRvcyBjbGltw6F0aWNvcyBleHRyZW1vcyBlbiBtdWNoYXMgcGFydGVzIGRlbCBtdW5kby4=```
+
+---
+
+## POST /entities — Solo entidades NER
+
+Recibe un POST con:
+
+- textbase64 (string): texto a procesar en Base64.
+
+Devuelve un arreglo de tuplas (text, label) con las entidades detectadas en el
+documento, sin repetidos y excluyendo etiquetas no deseadas.
+
+Detalles internos:
+
+- Se usa **spaCy** con el modelo es_core_news_md.
+- Se evita devolver entidades repetidas.
+- Se **excluyen** las entidades de etiqueta MISC (comportamiento original;
+  ver actualización del 23 Septiembre 2025 para excepciones).
+- Desde el **23 Septiembre 2025**, se añadieron **patrones personalizados de NER**
+  para entidades no cubiertas por el modelo, y ya se toman también las entidades
+  misceláneas que antes se evitaban. Categorías cubiertas por patrones:
+  - Tratados comerciales.
+  - Organismos y dependencias.
+  - Partidos políticos.
+  - Programas y políticas públicas.
+  - Empresas e instituciones relevantes en México.
+  - Medios de comunicación.
+  - Figuras políticas muy frecuentes.
+  - Tecnologías y conceptos.
+  - Inteligencia Artificial.
+
+Ejemplo de request:
+```json
+{
+    "textbase64": "R29iaWVybm8gZGUgRXN0YWRvcyBVbmlkb3Mu"
+}
+```
+
+Prueba rápida por URL:
+
+```http://127.0.0.1:5000/test?base64text=R29iaWVybm8gZGUgRXN0YWRvcyBVbmlkb3Mu```
+
+---
+
+## GET /test — Prueba rápida
+
+Recibe en el parámetro base64text un texto en Base64 y devuelve la misma salida
+que mode=single de /process:
+```json
+{
+    "mode": "test",
+    "text": "Texto recibido y limpio",
+    "embedding": [0.0123, -0.0456, "...", 128 valores]
+}
+```
+
+Ejemplo de uso:
+
+```http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=```
+
+> **Advertencia:** textos muy largos en Base64 pueden sobrepasar el límite de
+> longitud para URLs en un GET. Para textos largos, usa POST /process.
+
+---
+
+## GET /health y GET / — Healthcheck
+
+Sirven para comprobar que el servicio está en ejecución y respondiendo.
+
+---
+
+## Qué puedes construir con este servicio
+
+Gracias a que cada documento puede devolver embeddings, keywords y entidades —
+y opcionalmente un tratamiento separado para título y resumen — puedes:
+
+- **Búsqueda semántica** clásica sobre documentos o fragmentos (chunks).
+- **Búsqueda por keywords** o por entidades específicas (p. ej. "documentos que
+  mencionan al partido X").
+- **Clasificación de documentos** a partir de sus entidades / keywords.
+- **Búsqueda semántica restringida a título y/o resumen** (con mode=full).
+- **Comparación de documentos completos** por similitud de sus embeddings
+  agregados (embeddingFullDocument).
+- **Índices vectoriales complejos** con campos anidados (un vector por chunk, más
+  metadatos de keywords y entidades).
+- **Pipelines de RAG**: enriquecer cada documento con keywords y entidades que se
+  envían al LLM como contexto adicional, además del chunk recuperado.
+
+---
 
 ## Modelo de Embeddings
-Se utiliza el modelo ***paraphrase-multilingual-MiniLM-L12-v2***, que es de tamaño medio y funcional para texto en varios idiomas (inglés y español incluidos). Con este modelo se generan vectores de 384 dimensiones.
 
-Para evitar tener un esquema tan grande y previendo una indexación de millones de embeddings, se han reducido a 128 dimensiones, usando una ***matriz PCA de reducción***, previamente entrenada, incluida en el proyecto.
+Se utiliza el modelo **paraphrase-multilingual-MiniLM-L12-v2**, de tamaño medio
+y funcional para texto en varios idiomas (inglés y español incluidos). Con este
+modelo se generan vectores de **384 dimensiones**.
 
-### Acerca de la "Limpieza del texto" recibido
-La limpieza del texto antes de trabajarlo, es indispensable para que el modelo de procesamiento de lenguaje natural **es_core_news_md**, cumpla adecuadamente su función al separar en oraciones.
+Para evitar tener un esquema tan grande y previendo una indexación de millones de
+embeddings, se han reducido a **128 dimensiones** usando una **matriz PCA de
+reducción** previamente entrenada, incluida en el proyecto.
+
+---
+
+## Limpieza de texto recibido
+
+La limpieza del texto antes de trabajarlo es indispensable para que el modelo de
+procesamiento de lenguaje natural es_core_news_md cumpla adecuadamente su
+función al separar en oraciones.
 
 En este orden:
-- Se quita todo el contenido delimitado por '***[[RS-***'  '***-RS]]***'.
-- Se quitan todos los tokens : '***' (triple asterisco).
-- Se quitan todos los tokens : '***[[¡***'.
-- Se reemplazan todos los tokens : '***!]]***' por '```. ```'.
-- Se reemplazan todos los tokens : '***!]]***' por '```. ```'.
-- Se reemplazan todos los tokens : ``` '<br /><br />'```' por '```\n```'.
-- Se reemplazan todos los tokens : ``` '<br/><br/>'``` por '```\n```'.
-- Se reemplazan todos los tokens : ``` '<br/>'``` por '```\n```'.
-- Se reemplazan todos los tokens : ``` '<br />'``` por '```\n```'.
-- Se reemplazan todos los tokens : ``` ' —————————— '``` por '```\n```'.
-- Se reemplazan todos los tokens : ``` ' ___ '``` por '```\n```'.
-- Se eliminan el resto de TAGs de html.
-- Se quitan todos los tokens : '***[[03]]***'.
-- Se quitan todos los tokens : '***[[05]]***'.
-- Normaliza diferentes tipos de comillas dobles y simples a sólo tener las simples básicas.
-- Se reemplazan todos los tokens : '```\r\n\r\n```' por '```\r\n```'.
 
-
-### Lógica de separación de texto largo en varios Chunks
-Una vez limpio el texto y aplicando el modelo de procesamiento de lenguaje natural **es_core_news_md** con Spacy; se separa en oraciones y aplicando  ***Similaridad de Coseno*** con un umbral de **0.6** de similitud, se agrupan oraciones consecutivas en un mismo ***chunk***.
-
-En resumen, se obtienen embeddings para cada oración, y usando operaciones de similitud entre esas oraciones consecutivas, se determinan si varias oraciones se pueden agrupar a un mismo chunk o se manejan en chunks separados. 
-
-También se aplica la regla de que cada chunk tenga a al menos 150 caracteres. Con esto, oraciones muy cortas se agrupan en otras.
+1. Se quita todo el contenido delimitado por [[RS- … -RS]].
+2. Se quitan todos los tokens *** (triple asterisco).
+3. Se quitan todos los tokens [[¡.
+4. Se reemplazan todos los tokens !]] por . .
+5. Se reemplazan todos los tokens !]] por . . (regla conservada tal cual estaba en la versión original).
+6. Se reemplazan todos los tokens <br /><br /> por \n.
+7. Se reemplazan todos los tokens <br/><br/> por \n.
+8. Se reemplazan todos los tokens <br/> por \n.
+9. Se reemplazan todos los tokens <br /> por \n.
+10. Se reemplazan todos los tokens  ——————————  por \n.
+11. Se reemplazan todos los tokens  ___  por \n.
+12. Se eliminan el resto de TAGs de HTML.
+13. Se quitan todos los tokens [[03]].
+14. Se quitan todos los tokens [[05]].
+15. Se normalizan diferentes tipos de comillas dobles y simples a solo las simples básicas.
+16. Se reemplazan todos los tokens \r\n\r\n por \r\n.
 
 ---
 
-# Alternativas de uso
- - En máquina local: Con un ambiente en Python en toda regla. Sirve para desarrollo.
- - En Producción hay varias opciones:
-    1. También con un ambiente Python, pero sirviendo la aplicación con Waitress.
-    2. Ejecutable (EXE), pero es dificil de mantener; no tan recomendable y se vuelve un ejecutable enorme, dificil de hacer cambios.
-    3. Administrar como Servicio de Sistema. Usando NSSM (al final requiere su ambiente Python y también se sirve con Waitres, pero NSSM lo registra como servicio).
-    4. Como Imagen Docker (Docker + Flask + Waistress + NGINX). Es la opción ideal. Es lo más limpio y portable. Fácil de mover a Linux o la Nube ó escalar con Docker Compose / Kubernets.
-    5. Como Imagen Docker (Docker + Flask + Waistress). Es la opción ideal, si se instala en una infraestructura que ya cuenta con las funciones de "Balanceo de Carga" y "Proxy Inverso" (Servidores IIS). En estos casos, NGINX ya no es necesario.
+## Separación de texto largo en Chunks (chunking semántico)
+
+Una vez limpio el texto y aplicando el modelo es_core_news_md con **spaCy**, se
+separa en oraciones. Luego, aplicando **similitud de coseno** con un umbral de
+**0.6** de similitud, se agrupan oraciones consecutivas en un mismo chunk.
+
+En resumen:
+
+1. Se obtienen embeddings para cada oración.
+2. Se comparan oraciones consecutivas por similitud.
+3. Se agrupan en el mismo chunk si superan el umbral.
+4. Se aplica la regla de que cada chunk tenga al menos **150 caracteres**. Con
+   esto, oraciones muy cortas se agrupan con otras.
+
+---
+
+## Lematización de Keywords (detalle)
+
+Desde la actualización del **23 Septiembre 2025**, la lematización de keywords
+aplica varias capas de corrección en español:
+
+- Patrones de corrección en español.
+- Corrección de verbos mal lematizados terminados en -ir y en -ar.
+- Lista de correcciones a palabras puntuales.
+- Lista de anglicismos.
+- Lista de palabras con acentos.
+- Lista de nombres propios y errores comunes.
+
+---
+
+## Historial funcional (changelog integrado)
+
+Esta sección conserva, con sus fechas, las capacidades que se fueron añadiendo al
+servicio. Se mantiene íntegra como referencia de evolución y de decisiones de
+diseño.
+
+### Actualización 16 Mayo 2025
+- Se agrega el cálculo de **Keywords** al procesar embeddings; será parte de
+  la respuesta. Se devolverá un arreglo de hasta 12 keywords por todo el
+  documento, y máximo 5 por cada chunk generado.
+- Se agrega la ruta /keywords al WebService, para el caso donde solo se
+  necesite este cálculo. Recibe un POST con textbase64 y quantity.
+- Se usa **KeyBERT** con el modelo *"paraphrase-multilingual-MiniLM-L12-v2"*.
+- Se aplican **StopWords** en inglés y español de **NLTK**.
+- Se lematizan los resultados con **spaCy** y es_core_news_md.
+
+### Actualización 19 Mayo 2025
+- Se agrega el cálculo de **Entities** al procesar embeddings. Véase NER
+  (Named Entity Recognition): componente de PLN que identifica categorías
+  predefinidas de objetos en un texto. Categorías pueden incluir, entre otras:
+  nombres de personas, organizaciones, ubicaciones, expresiones de tiempo,
+  cantidades, códigos médicos, valores monetarios y porcentajes.
+- Se retorna un arreglo de tuplas (text, label) por todo el documento, y un
+  arreglo también por cada chunk.
+- Se agrega la ruta /entities al WebService. Recibe POST con textbase64.
+- Se usa **spaCy** con es_core_news_md.
+- Se evita devolver entidades repetidas.
+- Se evitan las entidades de etiqueta MISC.
+
+### Actualización 20 Mayo 2025
+- Se agregan 2 modos a /process:
+  - **extended**: igual que chunks, más keywordsFullDocument,
+    entitiesFullDocument y embeddingFullDocument.
+  - **full**: igual que extended, más el tratamiento de titlebase64 y
+    summarybase64 (opcionales) con sus 6 campos extra: titleEmbedding,
+    titleKeywords, titleEntities, summaryEmbedding, summaryKeywords,
+    summaryEntities.
+- Estos modos permiten generar índices vectoriales con metadatos detallados o
+  índices con esquemas de campos anidados.
+- Posibilita búsquedas por keywords, búsquedas por entidades, clasificación de
+  documentos, búsquedas semánticas solo por título y/o resumen, comparación de
+  documentos completos similares, etc. Además, entrega información extra útil
+  para enviarse a un LLM en caso de estar construyendo un RAG.
+- Se reconoce que estos modos pueden ser muy demandantes en recursos y tiempo;
+  por eso se ofrece la opción de elegir el modo que mejor se adapte a cada índice.
+
+### Actualización 23 Septiembre 2025
+- **Entidades NER:** se agregan patrones personalizados de entidades no
+  incluidas en es_core_news_md, y ya se toman las entidades misceláneas que
+  antes se evitaban. Categorías cubiertas:
+  - Tratados comerciales.
+  - Organismos y dependencias.
+  - Partidos políticos.
+  - Programas y políticas públicas.
+  - Empresas e instituciones relevantes en México.
+  - Medios de comunicación.
+  - Figuras políticas muy frecuentes.
+  - Tecnologías y conceptos.
+  - Inteligencia Artificial.
+- **Keywords:** se mejora la lógica con método **MMR** basado en factor discreto
+  (0.6, entre diversidad y relevancia). Si MMR falla, se reintenta sin MMR.
+  Siempre buscando palabras individuales, no frases.
+- **Lematización de Keywords:** se aplican patrones de corrección en español,
+  corrección de verbos mal lematizados terminados en -ir y -ar, lista de
+  correcciones puntuales, lista de anglicismos, lista de palabras con acentos y
+  lista de nombres propios y errores comunes.
+
+---
+
+## Alternativas de uso
+
+- **En máquina local:** con un ambiente Python completo. Sirve para desarrollo.
+- **En producción** hay varias opciones:
+  1. Ambiente Python sirviendo la aplicación con **Waitress**.
+  2. Ejecutable (EXE): difícil de mantener, no tan recomendable; se vuelve un
+     ejecutable enorme y difícil de modificar.
+  3. Administrar como **Servicio de Sistema** con **NSSM** (requiere su ambiente
+     Python y también se sirve con Waitress; NSSM lo registra como servicio).
+  4. **Imagen Docker (Docker + Flask + Waitress + NGINX)**: opción ideal. Limpio
+     y portable. Fácil de mover a Linux, a la nube, o de escalar con Docker
+     Compose / Kubernetes.
+  5. **Imagen Docker (Docker + Flask + Waitress)**: opción ideal si se instala en
+     una infraestructura que ya cuenta con "Balanceo de Carga" y "Proxy Inverso"
+     (servidores IIS). En estos casos, NGINX ya no es necesario.
+
+---
 
 ## Instalación para Desarrollo con su ambiente Python
-Si quieres tener la aplicación funcionando en tu entorno de desarrollo:
- 1. Clona el repositorio : ```git clone https://github.com/Hitokiri77777/Python-Embeddings-128.git```
- 2. En tu terminal, cámbiate al folder creado.
- 3. Crea el ambiente virtual con python (Se probó en Python 3.11.9). Usar : ``` python -m venv venv ```
- 4. Activa el ambiente virtual:
-    - En Windows : ``` venv\Scripts\activate ```
-    - En Linux   : ``` source venv/bin/activate ```
- 5. Instala las dependencias: ``` pip install -r requirements.txt ``` 
- 6. Ejecuta la aplicación : ``` python app.py ```
 
- * Podría usarse un servidor como "waitress" de Python, para mejorar respuestas de la aplicación flask:
-   - Instala el paquete ```pip install waitress``` con el ambiente activado.
-   - Sirve la aplicación de manera más eficiente con el modelo multihilo de waitress con esto:
+1. Clona el repositorio:
+   ``` git clone https://github.com/Hitokiri77777/Python-Embeddings-128.git ```
+2. En tu terminal, cámbiate al folder creado.
+3. Crea el ambiente virtual con Python (probado en **Python 3.11.9**):
+   ```python -m venv venv```
+4. Activa el ambiente virtual:
+   - Windows: ``` venv\Scripts\activate ```
+   - Linux:   ``` source venv/bin/activate ```
+5. Instala las dependencias:
+   ``` pip install -r requirements.txt ```
+6. Ejecuta la aplicación:
+   ``` python app.py ```
 
-       ```waitress-serve --host=0.0.0.0 --port=5000 app:app```
+Podrías usar **waitress** para mejorar las respuestas de Flask:
 
-       ó 
+- Instala: pip install waitress (con el ambiente activado).
+- Sirve con:
 
-       ```python -m waitress --host=0.0.0.0 --port=5000 app:app```
+  ``` waitress-serve --host=0.0.0.0 --port=5000 app:app ```
 
-- Ver prueba básica de creación de embedding en la última sección del documento.
-- Con la demostración exitosa de la prueba; puedes ya hacer *POST* a la ruta **/process** para trabajar. 
+  ó
+
+  ``` python -m waitress --host=0.0.0.0 --port=5000 app:app``` 
+
+- Ver *"Prueba básica de creación de Embedding"* al final del documento.
+- Con la prueba exitosa, ya puedes hacer POST a /process para trabajar.
 
 ---
 
-## Creación de Imagen para ***Docker***
-Usar el archivo **Dockerfile** en la raíz del proyecto, para creación y puesta en marcha del contenedor. 
+## Creación de Imagen para Docker (solo Flask)
 
-1. Teniendo Docker instalado. Hacer : ```docker build -t python_embeddings .```
-   para crear la imagen.
-2. Pruébalo con  : ```docker run -it --rm -p 5000:5000 python_embeddings```
-   Con esto, el puerto 5000 de la imagen se mapeará al también 5000 de tu máquina, e irás viendo los mensajes en consola.
-3. Ahora si podrías hacer la prueba: ```http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE=```
+Usa el archivo **Dockerfile** en la raíz del proyecto.
 
-**10-Abril-2024**
-Se actualizó archivo ***Dockerfile***, donde se pulen y toman en cuenta varios aspectos:
-- Debería ser ahora una imagen más estable, incluye variables de entorno y ya no se ejecuta como root.
-- Lo más reducida posible: Ya no se incluyen compiladores, descargables, temporales y se reducen capas de creación de Docker.
-- Ya incluiría el modelo *"paraphrase-multilingual-MiniLM-L12-v2"* cacheado dentro de la imagen.
-* Se comprobó que la imagen es perfectamente funcional y sin errores.
-* El tamaño final de la imagen es de 2.16 GigaBytes.
+1. Teniendo Docker instalado:
+   docker build -t python_embeddings .
+2. Pruébalo:
+   docker run -it --rm -p 5000:5000 python_embeddings
+   Esto mapea el puerto 5000 de la imagen al 5000 de tu máquina, y verás los
+   mensajes en consola.
+3. Prueba: ``` http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE= ```
 
+**10 Abril 2024** — Se actualizó el Dockerfile con varios aspectos:
 
-### Sugerencia para llevarlo a Producción con NGINX
-Se puede poner esta aplicación detrás de un servidor ***Nginx*** para mejorar rendimiento, seguridad y escalabilidad.
+- Imagen más estable: incluye variables de entorno y ya no se ejecuta como root.
+- Lo más reducida posible: ya no se incluyen compiladores, descargables ni
+  temporales, y se reducen capas de creación de Docker.
+- Incluye el modelo *"paraphrase-multilingual-MiniLM-L12-v2"* cacheado dentro de
+  la imagen.
+- Se comprobó que la imagen es funcional y sin errores.
+- Tamaño final de la imagen: **2.16 GB**.
 
-Para hacerlo, puedes usar el archivo ***docker-compose.yml***. Esto crearía el flujo siguiente:
+---
+
+## Producción con NGINX (arquitectura de proxy inverso)
+
+Puedes poner esta aplicación detrás de **NGINX** para mejorar rendimiento,
+seguridad y escalabilidad. Se usa el archivo **docker-compose.yml** del
+repositorio, que crea el flujo descrito al inicio:
+
 1. El usuario accede a http://localhost/.
-2. Nginx recibe la solicitud en el puerto 80.
-3. Nginx reenvía la solicitud al contenedor de Flask en backend:5000.
-4. Flask procesa la petición y devuelve la respuesta a Nginx.
-5. Nginx envía la respuesta final al usuario.
+2. NGINX recibe la solicitud en el puerto 80.
+3. NGINX reenvía la solicitud al contenedor de Flask en backend:5000.
+4. Flask procesa la petición y devuelve la respuesta a NGINX.
+5. NGINX envía la respuesta final al usuario.
 
-Utilizarías el comando ```docker-compose up --build -d```
-- Esto crearía las 2 imágenes, una para la App de Flask, nuestra app. Y otra con un linux Alpine súper ligero, con un servidor de Nginx. Y un "puente de red" para hacer que las dos imágenes trabajen en conjunto.
+Comando:
+``` docker-compose up --build -d ```
 
-Tener una aplicación Flask detrás de un servidor Nginx es una práctica recomendada en entornos de producción porque mejora la seguridad, el rendimiento y la escalabilidad. Nginx es un servidor web ligero y eficiente que actúa como intermediario entre los clientes (navegador, API, etc.) y la aplicación Flask.
+Esto crea las 2 imágenes (Flask + Alpine/NGINX), las conecta con un *puente de
+red* y las deja trabajando en conjunto.
+
+Tener una aplicación Flask detrás de NGINX es una práctica recomendada en
+producción porque mejora seguridad, rendimiento y escalabilidad. NGINX actúa
+como intermediario entre los clientes (navegador, API, etc.) y la aplicación
+Flask.
 
 ### Beneficios en producción
-- Optimización de tráfico → Nginx maneja archivos estáticos, evitando que Flask se sobrecargue.
-- Seguridad → Evita que los clientes accedan directamente a Flask.
-- Escalabilidad → Puedes agregar múltiples instancias de Flask detrás de Nginx.
-- HTTPS fácil → Puedes configurar un certificado SSL en Nginx sin tocar Flask. 
 
-## Creación de Imagenes en Docker (Flask y Nginx)
-Teniendo Docker instalado, cámbiate al directorio de la aplicación. Y con el comando ```docker-compose up --build```
-Eso crearía 2 imágenes en Docker dentro de una red.
+- **Optimización de tráfico:** NGINX maneja archivos estáticos, evitando que
+  Flask se sobrecargue.
+- **Seguridad:** evita que los clientes accedan directamente a Flask.
+- **Escalabilidad:** — dos patrones soportados:
+1. *Escalamiento vertical de concurrencia:* varias instancias de Flask
+detrás de un mismo NGINX (requiere un balanceador delante de NGINX o
+upstream en NGINX).
 
-Comprueba que las 2 imágenes se estan ejecutando  con ```docker ps```
+2. *Escalamiento horizontal por nodos:* varias instancias del stack
+completo (NGINX + Flask + Waitress) en servidores Linux distintos, con
+partición estática de carga controlada por el cliente. Este es el
+patrón usado actualmente en producción; ver "Despliegue actual en
+producción" más abajo.
+- **HTTPS fácil:** puedes configurar un certificado SSL en NGINX sin tocar
+  Flask.
 
-Comprueba que Nginx recibe las llamadas las direcciona a Flask:
-```http://127.0.0.1/test?base64text=SG9sYSBNdW5kbyE=```
-A diferencia de las pruebas anteriores, aqui no se indica el puerto 5000.
+### Despliegue actual en producción (escalamiento horizontal por nodos)
 
+El servicio se encuentra desplegado en **dos nodos independientes** sobre
+servidores Linux. Cada nodo ejecuta su propio stack completo
+(**NGINX + Flask/Waitress**) y tiene su propia IP de intranet. No hay un
+balanceador dinámico delante de ambos nodos: la distribución de carga se
+realiza de forma **manual, por configuración del cliente**.
+
+#### Esquema general
+
+```
+Índice Semántico 1 ─┐
+Índice Semántico 2 ─┴─→ IP A
+Índice Semántico 3 ─┐
+Índice Semántico 4 ─┴─→ IP B
+                                   │
+Buscador Web ──────────────→ IP A
+RAG ───────────────────────→ IP B
+```
+
+#### Distribución actual
+
+- **4 índices semánticos 24/7** que consumen el servicio para generar
+  embeddings, keywords, entidades y chunks que luego se indexan.
+- **2 índices** apuntan al **Nodo A** y **2 índices** al **Nodo B**
+  (reparto fijo, definido en la configuración de cada índice).
+- El **Buscador Web** consulta **solo una** de las dos IPs del servicio.
+- El **RAG** consulta **solo el Nodo B**.
+
+#### Decisión de diseño: sin balanceador
+
+Se evaluó la opción de colocar un balanceador delante de ambos nodos, a cargo
+del Centro de Cómputo sobre la infraestructura existente. La implementación
+no llegó a concretarse como una solución estable para el equipo, por lo que
+se optó por **partición estática de carga en el cliente**.
+
+Para el perfil de uso actual (4 índices semánticos, 1 buscador web y 1 RAG),
+esta opción resulta suficiente y predecible.
+
+> **Nota de contexto:** el ecosistema de la organización es mayoritariamente
+> Windows, mientras que los nodos del servicio NLP operan sobre Linux.
+> Cualquier solución de balanceo futura deberá considerar esta convivencia.
+
+#### Ventajas del esquema actual
+
+- **Sin SPOF de balanceador:** si un nodo cae, solo se ven afectados los
+  índices configurados contra ese nodo; se pueden reconfigurar al otro nodo
+  de forma manual.
+- **Latencia predecible:** cada cliente "sabe" a qué IP ir siempre; no hay
+  salto de red adicional por balanceo.
+- **Operación simple:** no requiere infraestructura adicional ni
+  descubrimiento de servicios.
+
+#### Consideraciones y evolución futura
+
+- El reparto es **manual**; agregar/quitar nodos o rebalancear requiere
+  reconfigurar los clientes afectados.
+- Si en el futuro se requiere **balanceo dinámico**, bastará con colocar un
+  balanceador (por ejemplo, uno basado en las herramientas de Windows Server
+  disponibles en la infraestructura, o un servicio de nube) delante de ambos
+  nodos y apuntar todos los clientes a esa única entrada.
+- A mediano plazo existe interés en acercarse a un esquema auto-contenido
+  desplegable en nube (Kubernetes, **EKS de AWS**, servicios gestionados, o pipelines desde
+  el mismo GitHub), pero por costos no se ha iniciado. El diseño actual
+  (stack completo por nodo, sin dependencias externas al nodo) es compatible
+  con esa migración futura.
+
+---
+
+## Creación de Imágenes en Docker (Flask + NGINX)
+
+Teniendo Docker instalado, cámbiate al directorio de la aplicación y ejecuta:
+
+``` docker-compose up --build ```
+
+Eso crea 2 imágenes en Docker dentro de una red.
+
+Comprueba que las 2 imágenes están ejecutándose con:
+
+``` docker ps ```
+
+Comprueba que NGINX recibe las llamadas y las direcciona a Flask:
+
+``` http://127.0.0.1/test?base64text=SG9sYSBNdW5kbyE= ```
+
+A diferencia de las pruebas anteriores, aquí **no** se indica el puerto 5000.
+
+---
 
 ## Prueba básica de creación de Embedding
-- Usa: http://127.0.0.1:5000/test?base64text=R29iaWVybm8gZGUgRXN0YWRvcyBVbmlkb3Mu
-    ó, cuando ya hay un servidor Nginx al frente: http://127.0.0.1/test?base64text=R29iaWVybm8gZGUgRXN0YWRvcyBVbmlkb3Mu
-  - Verás el ***Embedding*** de resultado, con el texto recibido ya limpio.
-  - Se usa *Base64*, porque el texto puede contener caracteres que pueden chocar con el esquema de una URL correcta o de un JSON bien formado. Aplica igual para el caso de los datos JSON recibidos en los *POST*.
-  - Es posible que textos muy largos en *Base64*, sobrepasen el límite para *GET* de ***/test***, por si vas a probar textos propios en sea ruta **/test**.
-  - Aqui ya verías los nuevos Keywords y Entities calculados.
+
+Usa:
+
+``` http://127.0.0.1:5000/test?base64text=R29iaWVybm8gZGUgRXN0YWRvcyBVbmlkb3Mu ```
+
+O, cuando ya hay un servidor NGINX al frente:
+
+``` http://127.0.0.1/test?base64text=R29iaWVybm8gZGUgRXN0YWRvcyBVbmlkb3Mu ```
+
+Verás el ***Embedding*** de resultado, con el texto recibido ya limpio, y
+también los *Keywords* y *Entities* calculados.
+
+Notas:
+
+- Se usa **Base64** porque el texto puede contener caracteres que chocarían con
+  el esquema de una URL correcta o con un JSON bien formado. Aplica igual para
+  el caso de los datos JSON recibidos en los POST.
+- Es posible que textos muy largos en Base64 sobrepasen el límite para GET de
+  /test; en ese caso usa POST /process.
