@@ -527,18 +527,17 @@ realiza de forma **manual, por configuración del cliente**.
 Índice Semántico 2 ─┴─→ IP A
 Índice Semántico 3 ─┐
 Índice Semántico 4 ─┴─→ IP B
-                                   │
-Buscador Web ──────────────→ IP A
-RAG ───────────────────────→ IP B
+Buscador Web ─────────→ IP A
+RAG ──────────────────→ IP B
 ```
 
 #### Distribución actual
 
 - **4 índices semánticos 24/7** que consumen el servicio para generar
-  embeddings, keywords, entidades y chunks que luego se indexan.
+  embeddings, keywords, entidades y chunks que luego se indexan. 
 - **2 índices** apuntan al **Nodo A** y **2 índices** al **Nodo B**
   (reparto fijo, definido en la configuración de cada índice).
-- El **Buscador Web** consulta **solo una** de las dos IPs del servicio.
+- El **Buscador Web** consulta **sólo al Nodo A**.
 - El **RAG** consulta **solo el Nodo B**.
 
 #### Decisión de diseño: sin balanceador
