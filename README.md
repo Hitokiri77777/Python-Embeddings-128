@@ -449,13 +449,22 @@ Podrías usar **waitress** para mejorar las respuestas de Flask:
 
 ## Creación de Imagen para Docker (solo Flask)
 
+Esta sección es para cuando quieres levantar **solo la aplicación Flask** (sin
+NGINX como proxy inverso), por ejemplo, en una máquina de desarrollo
+
 Usa el archivo **Dockerfile** en la raíz del proyecto.
 
-1. Teniendo Docker instalado:
-   docker build -t python_embeddings .
-2. Pruébalo:
-   docker run -it --rm -p 5000:5000 python_embeddings
-   Esto mapea el puerto 5000 de la imagen al 5000 de tu máquina, y verás los
+1. Teniendo Docker instalado, construye la imagen:
+   ``` docker build -t python_embeddings . ```
+
+Nota: si quieres acelerar la descarga del modelo de embeddings, puedes
+pasar el token de Hugging Face como secreto (ver la sección
+"Desarrollo local con token de Hugging Face"). Sin token, el build
+funciona igual, solo más lento.
+
+2. Prueba la imagen:
+   ``` docker run -it --rm -p 5000:5000 python_embeddings ```
+   Esto mapea el puerto 5000 de la imagen, al 5000 de tu máquina, y verás los
    mensajes en consola.
 3. Prueba: ``` http://127.0.0.1:5000/test?base64text=SG9sYSBNdW5kbyE= ```
 
@@ -468,6 +477,20 @@ Usa el archivo **Dockerfile** en la raíz del proyecto.
   la imagen.
 - Se comprobó que la imagen es funcional y sin errores.
 - Tamaño final de la imagen: **2.16 GB**.
+
+** 27 Octubre 27 2026** — Migración a Python 3.12 y multi-stage build:
+
+- Base python:3.9-slim-bookworm → python:3.12-slim-bookworm.
+
+- Multi-stage build (etapa builder + etapa final), lo que reduce el tamaño
+final al excluir compiladores y temporales.
+
+- pip, setuptools, wheel actualizados a versiones parcheadas (sin CVEs).
+
+- Tamaño final de la imagen: ~1.52 GB (reducción respecto a la versión
+anterior).
+
+- Verificado con Trivy: 0 CVEs con fix en Python (runtime y build tools).
 
 ---
 
@@ -584,13 +607,13 @@ esta opción resulta suficiente y predecible.
 
 Teniendo Docker instalado, cámbiate al directorio de la aplicación y ejecuta:
 
-``` docker-compose up --build ```
+``` docker compose up --build ```
 
 Eso crea 2 imágenes en Docker dentro de una red.
 
 Comprueba que las 2 imágenes están ejecutándose con:
 
-``` docker ps ```
+``` docker compose ps ```
 
 Comprueba que NGINX recibe las llamadas y las direcciona a Flask:
 
@@ -660,6 +683,9 @@ docker compose build nginx_proxy
 
 # Levantar ambos contenedores
 docker compose up -d
+
+# Recrear contenedores si hubo algún cambio
+docker compose up -d --force-recreate
 ```
 
 ### 5. Alternativa: build sin token (como en producción)
