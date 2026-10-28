@@ -600,6 +600,92 @@ A diferencia de las pruebas anteriores, aquí **no** se indica el puerto 5000.
 
 ---
 
+## Desarrollo local con token de Hugging Face (opcional)
+
+En producción el build se hace sin token: el modelo de
+embeddings se descarga de forma anónima y el build se completa igual, solo que
+más lento (Hugging Face aplica rate limit a usuarios no autenticados).
+
+En desarrollo, si quieres acelerar la descarga del modelo, puedes usar un token
+gratuito de Hugging Face.
+
+### 1. Generar el token
+
+1. Crea una cuenta (gratuita) en https://huggingface.co/join
+2. Ve a https://huggingface.co/settings/tokens
+3. Pulsa "New token", dale un nombre (ej. `docker-embeddings-build`) y
+   selecciona el rol **Read** (solo lectura, es suficiente).
+4. Copia el token (empieza con `hf_...`). **No lo compartas ni lo subas al repo.**
+
+### 2. Guardarlo en disco (fuera del proyecto)
+
+```bash
+# Guardar el token en un archivo fuera del repositorio
+echo "hf_tu_token_aqui" > ~/.hf_token
+
+# Restringir permisos: solo tu usuario puede leerlo
+chmod 600 ~/.hf_token
+```
+
+`chmod 600` significa: lectura y escritura solo para el propietario, nada para
+grupo ni otros. Es importante porque el token es una credencial sensible.
+
+### 3. Construir la imagen de Flask con el token
+
+El token se pasa como **secreto de BuildKit** (no queda grabado en la imagen).
+El Dockerfile lo monta solo durante el `RUN` de descarga del modelo:
+
+```bash
+# Construir Flask con token (rápido)
+docker buildx build --secret id=HF_TOKEN,src=$HOME/.hf_token \
+  -t python-embeddings-128-flask_app:latest --load .
+```
+
+Si cambiaste `requirements.txt` o el Dockerfile (y necesitas reconstruir todo):
+
+```bash
+docker buildx build --no-cache --secret id=HF_TOKEN,src=$HOME/.hf_token \
+  -t python-embeddings-128-flask_app:latest --load .
+```
+
+> **Nota:** `--no-cache` solo es necesario cuando cambias `requirements.txt` o
+> el Dockerfile. Para cambios solo en `app.py`, sin `--no-cache` es mucho más
+> rápido (reutiliza las capas cacheadas).
+
+### 4. Construir NGINX (no necesita token) y levantar todo
+
+```bash
+# NGINX se construye en segundos, sin token
+docker compose build nginx_proxy
+
+# Levantar ambos contenedores
+docker compose up -d
+```
+
+### 5. Alternativa: build sin token (como en producción)
+
+Si no quieres usar token (o no tienes uno a mano), el build funciona igual,
+solo más lento:
+
+```bash
+docker compose up --build
+```
+
+### Resumen de comandos
+
+| Escenario | Comando |
+|---|---|
+| **Primera vez / cambios en requirements.txt o Dockerfile** | `docker buildx build --no-cache --secret id=HF_TOKEN,src=$HOME/.hf_token -t python-embeddings-128-flask_app:latest --load .` |
+| **Solo cambios en app.py (rápido)** | `docker buildx build --secret id=HF_TOKEN,src=$HOME/.hf_token -t python-embeddings-128-flask_app:latest --load .` |
+| **Construir NGINX** | `docker compose build nginx_proxy` |
+| **Levantar todo** | `docker compose up -d` |
+| **Sin token (como producción)** | `docker compose up --build` |
+
+> **Seguridad:** el token **nunca** se escribe en el Dockerfile ni se commitea.
+> Se pasa como `--secret` en el build, y BuildKit lo monta de forma efímera
+> (desaparece al terminar el `RUN`). El archivo `~/.hf_token` está fuera del
+> repositorio y con permisos `600`.
+
 ## Prueba básica de creación de Embedding
 
 Usa:
