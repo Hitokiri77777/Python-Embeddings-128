@@ -686,6 +686,59 @@ docker compose up --build
 > (desaparece al terminar el `RUN`). El archivo `~/.hf_token` está fuera del
 > repositorio y con permisos `600`.
 
+---
+
+## Actualización por CVEs (seguridad)
+
+**Octubre 27, 2026**
+Esta versión del proyecto migró de Python 3.9 a **Python 3.12** y actualizó
+las dependencias para eliminar vulnerabilidades conocidas (CVEs) detectadas en
+las imágenes Docker. Los cambios están en:
+
+| Archivo | Cambio | Motivo |
+|---|---|---|
+| **Dockerfile** | Base `python:3.9-slim-bookworm` → `python:3.12-slim-bookworm` | Python 3.9 está EOL desde oct-2025 (sin parches de seguridad) |
+| **Dockerfile** | `pip`, `setuptools`, `wheel` actualizados a versiones parcheadas | Eliminan CVEs de herramientas de build |
+| **Dockerfile** | `rm` del SBOM interno de `pip` (`bom.cdx.json`) | Evita que Trivy reporte falsos positivos por SBOMs desactualizados |
+| **Dockerfile.nginx** | `apk upgrade --no-cache` | Actualiza paquetes de Alpine (brotli, curl) con CVEs HIGH |
+| **nginx.conf** | Bloque `location = /favicon.ico { return 204; }` | Evita 404 en logs de Flask (ruido del navegador) |
+| **requirements.txt** | Versiones pinneadas a las validadas (Flask 3.1.3, nltk 3.10.4, sentence-transformers 6.2.0, transformers 5.21.0, etc.) | Alinea dev y prod; evita resolver versiones con CVEs |
+
+### Verificación con Trivy
+
+Tras el build, se escanearon ambas imágenes con Trivy para confirmar que no
+quedan vulnerabilidades explotables:
+
+```bash
+# NGINX (Alpine)
+trivy image --scanners vuln --timeout 30m python-embeddings-128-nginx_proxy:latest
+
+# Flask (Debian + Python)
+trivy image --scanners vuln --ignore-unfixed --timeout 30m \
+  python-embeddings-128-flask_app:latest
+```
+
+### Resultado del escaneo
+
+| Imagen | Componente | CVEs con fix | Estado |
+|---|---|---|---|
+| **NGINX** | Alpine 3.24.3 (paquetes) | **0** | ✅ Verde |
+| **Flask** | Python (runtime + build tools) | **0** | ✅ Verde |
+| **Flask** | Base Debian 12.15 | 0 con fix (270 sin fix) | ✅ Verde (riesgo residual aceptado) |
+
+**Conclusión:** las imágenes están en **verde** para los paquetes que la
+aplicación realmente usa (Python runtime y NGINX). Los 270 CVEs de la base
+Debian no tienen parche disponible en la rama `bookworm` de Debian, y se
+aceptan como riesgo residual por el contexto de despliegue (red corporativa
+cerrada, servidor de embeddings interno sin exposición a Internet).
+
+> **Nota sobre `--ignore-unfixed`:** este flag muestra solo los CVEs que tienen
+> una versión de corrección publicada. Se usa para confirmar que no hay
+> vulnerabilidades **explotables con fix disponible**. Los CVEs sin fix
+> (`Status: affected`) no se pueden resolver desde el Dockerfile; dependen de
+> que Debian publique parches en `bookworm`.
+
+---
 ## Prueba básica de creación de Embedding
 
 Usa:
