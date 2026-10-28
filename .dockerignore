@@ -1,0 +1,10 @@
+venv/
+venv-test/
+__pycache__/
+*.pyc
+.git/
+.env
+requirements-freeze-linux.txt
+requirements.txt.viejo
+trivy-*.txt
+pip-audit-report.txt

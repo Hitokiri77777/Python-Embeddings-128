@@ -1,11 +1,13 @@
-# Usamos una imagen base de Nginx
 FROM nginx:alpine
 
-# Copiar archivo de configuración de Nginx a la ubicación estándar de Nginx
+# Actualizar paquetes de Alpine a sus últimas versiones (parches de seguridad)
+RUN apk upgrade --no-cache && \
+    rm -rf /var/cache/apk/*
+
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Exponer el puerto 80
-EXPOSE 80
+# El puerto interno (80) está definido en nginx.conf con `listen 80`.
+# El mapeo al host lo define docker-compose.yml con `ports`.
+# No se usa EXPOSE porque no aporta nada funcional en este setup.
 
-# Ejecutar Nginx en primer plano (sin esto, el contenedor se cerrará inmediatamente)
 CMD ["nginx", "-g", "daemon off;"]
