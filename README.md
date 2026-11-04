@@ -795,9 +795,28 @@ antes de que nuestro código tenga control.
 
 | Archivo | Cambio | Motivo |
 |---|---|---|
+| **Dockerfile** | Se corrige el orden de establecimiento de variables de entorno y la descarga del modelo | `HF_HOME` debe definirse antes del `RUN` de descarga para que el modelo se guarde en la ruta que usará el runtime; `HF_HUB_OFFLINE` / `TRANSFORMERS_OFFLINE` deben definirse después, para no bloquear la descarga durante el build |
+| **Dockerfile** | Se agrega `--channel-timeout=300` al `CMD` de Waitress | Mantiene una conexión inactiva como máximo 300 s antes de cerrarla; da margen a peticiones largas (modos `extended`/`full`) |
+| **nginx.conf** | Se alargan los timeouts del proxy: `proxy_connect_timeout 10s`, `proxy_send_timeout 120s`, `proxy_read_timeout 300s` | Evita que NGINX corte procesamientos largos que aún están en curso (default de `proxy_read_timeout` suele ser 60 s) |
 | **Dockerfile** | Se añaden `HF_HUB_OFFLINE=1` y `TRANSFORMERS_OFFLINE=1` al bloque `ENV` de la etapa final | Cinturón de seguridad para rutas internas de las librerías que pudieran intentar red (p. ej. hilos en segundo plano durante `encode()`) |
 | **ChunksAndEmbeddings.py** | Se pasa `local_files_only` explícito al constructor de `SentenceTransformer` | Fuerza el uso exclusivo de la caché local en producción, sin verificación de red |
 | **app.py** | Versión mostrada en `/health` actualizada a **1.0.5** | Refleja la corrección aplicada |
+
+### Orden de variables de entorno en el Dockerfile
+
+El orden de las variables respecto al `RUN` de descarga del modelo es
+deliberado y no debe alterarse:
+
+1. **`HF_HOME` se define antes del `RUN` de descarga.** Esto asegura que el
+   modelo se guarde en `/home/appuser/.cache/huggingface`, que es la ruta que
+   el runtime buscará.
+2. **`HF_HUB_OFFLINE=1` y `TRANSFORMERS_OFFLINE=1` se definen después del
+   `RUN` de descarga.** Si se definen antes, `huggingface_hub` desactiva la
+   red al importarse y el build falla con `LocalEntryNotFoundError` al no
+   encontrar el modelo en caché.
+
+Este orden ya fue validado: el build completa correctamente y el contenedor
+arranca en modo offline con el modelo disponible localmente.
 
 ### Detalle del flag `local_files_only`
 
