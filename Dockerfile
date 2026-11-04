@@ -49,17 +49,18 @@ COPY --from=builder /usr/local/share/nltk_data /usr/local/share/nltk_data
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     HF_HOME=/home/appuser/.cache/huggingface \
-    NLTK_DATA=/usr/local/share/nltk_data \
-    HF_HUB_OFFLINE=1 \
-    TRANSFORMERS_OFFLINE=1
-
-USER appuser
+    NLTK_DATA=/usr/local/share/nltk_data
 
 RUN --mount=type=secret,id=HF_TOKEN,env=HF_TOKEN \
     python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')"
+
+ENV HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1
+
+USER appuser
 
 COPY --chown=appuser:appuser . .
 
 EXPOSE 5000
 
-CMD ["waitress-serve", "--host=0.0.0.0", "--port=5000", "app:app"]
+CMD ["waitress-serve", "--host=0.0.0.0", "--port=5000", "--channel-timeout=300", "app:app"]
