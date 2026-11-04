@@ -49,7 +49,9 @@ COPY --from=builder /usr/local/share/nltk_data /usr/local/share/nltk_data
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     HF_HOME=/home/appuser/.cache/huggingface \
-    NLTK_DATA=/usr/local/share/nltk_data
+    NLTK_DATA=/usr/local/share/nltk_data \
+    HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1
 
 USER appuser
 
