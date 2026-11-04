@@ -19,37 +19,53 @@ class ChunksAndEmbeddings:
 
     def Load_LanguageModel(self):
         # Lógica de selección automática
+
+        # local_files_only se metió al constructor de SentenceTransformer porque,
+        # al parecer, sentence-transformers 6.2.0 y transformers 5.21.0 buscan
+        # comprobar el caché de modelos contra el Hub de Hugging Face e intentan
+        # conectarse. Esto provoca TIME_OUTS después de varias horas de arrancado
+        # al no poder acceder a Internet desde los contenedores Docker en producción.
+        # Se establece local_files_only=True explícitamente porque es posible que
+        # las variables de entorno HF_HUB_OFFLINE=1 y TRANSFORMERS_OFFLINE=1 no
+        # sean tomadas en cuenta al llegar a este punto (huggingface_hub las lee
+        # al importarse, y si ya fue importado antes, el flag queda congelado).
+
         if self._is_running_in_docker():
-            # Cargar modelo de embeddings desde internet (Así debe usarse cuando se ejecuta desde Docker)
-            model_path = "paraphrase-multilingual-MiniLM-L12-v2"
+            # Cargar modelo de embeddings al generar la imagen docker (Así debe usarse cuando se ejecuta desde Docker)
+            model_path  = "paraphrase-multilingual-MiniLM-L12-v2"
             environment = "DOCKER/PRODUCTION"
+            local_only  = True          # Clave: no intentar usar la red en producción
         elif Path("../ModelosIA/paraphrase-multilingual-MiniLM-L12-v2").exists():
             # Cargar modelo de embeddings en Desarrollo desde disco duro
-            model_path = "../ModelosIA/paraphrase-multilingual-MiniLM-L12-v2"
+            model_path  = "../ModelosIA/paraphrase-multilingual-MiniLM-L12-v2"
             environment = "DEVELOPMENT (local model)"
+            local_only  = False         # es una ruta local; el flag no aplica
         else:
             # Por si estamos en Desarrollo y no existe el modelo en disco duro
-            model_path = "paraphrase-multilingual-MiniLM-L12-v2"
+            model_path  = "paraphrase-multilingual-MiniLM-L12-v2"
             environment = "DEVELOPMENT (remote model)"
-        
+            local_only  = False         # permitir descarga en Desarrollo
+
         # Analizar antes de cargar
         model_info = self._analyze_model_path(model_path)
-        
+
         print(f" 🔍 Entorno detectado: {environment}")
         print(f" 📁 Modelo solicitado: {model_path}")
         print(f" 🎯 Origen del modelo: {model_info['source']}")
         print(f" 📍 {model_info['description']}")
-        
+        print(f" {'📴' if local_only else '🌐'} local_files_only={local_only} "
+              f"({'sin verificación de red' if local_only else 'permite verificación/descarga desde el Hub'})")
+
         if model_info['size_mb'] != 'Unknown':
             print(f" 💾 Tamaño: {model_info['size_mb']:.1f} MB")
-        
+
         if model_info['source'] == 'DOWNLOAD_REQUIRED':
             print(" ⏬ INICIANDO DESCARGA...")
             
         start_time = time.time()
         
         try:
-            self.EmbeddigModel = SentenceTransformer(model_path)
+            self.EmbeddigModel = SentenceTransformer(model_path, local_files_only=local_only)
             load_time = time.time() - start_time
             
             # Información post-carga
