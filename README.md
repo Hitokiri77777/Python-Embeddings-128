@@ -478,19 +478,16 @@ funciona igual, solo más lento.
 - Se comprobó que la imagen es funcional y sin errores.
 - Tamaño final de la imagen: **2.16 GB**.
 
-** 27 Octubre 27 2026** — Migración a Python 3.12 y multi-stage build:
-
-- Base python:3.9-slim-bookworm → python:3.12-slim-bookworm.
-
-- Multi-stage build (etapa builder + etapa final), lo que reduce el tamaño
-final al excluir compiladores y temporales.
-
-- pip, setuptools, wheel actualizados a versiones parcheadas (sin CVEs).
-
-- Tamaño final de la imagen: ~1.52 GB (reducción respecto a la versión
-anterior).
-
-- Verificado con Trivy: 0 CVEs con fix en Python (runtime y build tools).
+**27 Octubre 2026** — Migración a Python 3.12 y actualización por CVEs:
+  - Base `python:3.9-slim-bookworm` → `python:3.12-slim-bookworm`
+    (Python 3.9 EOL desde oct-2025).
+  - `pip`, `setuptools`, `wheel` actualizados a versiones parcheadas
+    (eliminan CVEs de build tools).
+  - `rm` del SBOM interno de `pip` (`bom.cdx.json`) para evitar falsos
+    positivos en Trivy.
+  - Tamaño final de la imagen: **~1.52 GB** (reducción respecto a la versión
+    anterior, gracias a la base más ligera y a los paquetes actualizados).
+  - Verificado con Trivy: 0 CVEs con fix en Python (runtime y build tools).
 
 ---
 
@@ -763,6 +760,58 @@ cerrada, servidor de embeddings interno sin exposición a Internet).
 > vulnerabilidades **explotables con fix disponible**. Los CVEs sin fix
 > (`Status: affected`) no se pueden resolver desde el Dockerfile; dependen de
 > que Debian publique parches en `bookworm`.
+
+---
+
+## Corrección: timeouts en producción por verificación de red del modelo (v1.0.5)
+
+**Noviembre 4, 2026**
+
+Tras la actualización por CVEs del 27-oct-2026 (migración a Python 3.12 y
+actualización de dependencias), los contenedores del Servidor de Embedding
+empezaron a fallar por **timeout** aproximadamente **6 horas después del
+arranque**, aun con la carga repartida entre los dos nodos y con el
+mantenimiento de índices reducido a la mitad. El código de Flask no cambió;
+el problema apareció en el entorno de ejecución.
+
+### Causa raíz
+
+`sentence-transformers 6.2.0` y `transformers 5.21.0` verifican el caché de
+modelos contra el Hub de Hugging Face **al cargar el modelo**, incluso cuando
+el modelo ya está descargado. En los contenedores Docker de producción
+(intranet cerrada, sin salida a Internet), esa verificación no falla rápido:
+se queda esperando hasta agotar timeout. Cada petición que toca esa ruta ocupa
+un hilo de Waitress; cuando se agotan los hilos, el servicio deja de responder
+aunque el proceso siga vivo. Eso explica el patrón "funciona unas horas y luego
+colapsa".
+
+Las variables de entorno `HF_HUB_OFFLINE=1` y `TRANSFORMERS_OFFLINE=1` son
+necesarias pero **no suficientes** en este caso: `huggingface_hub` las lee
+**una sola vez al importarse**, y como `sentence_transformers` se importa en la
+primera línea de `ChunksAndEmbeddings.py`, el flag queda congelado en `False`
+antes de que nuestro código tenga control.
+
+### Cambios aplicados
+
+| Archivo | Cambio | Motivo |
+|---|---|---|
+| **Dockerfile** | Se añaden `HF_HUB_OFFLINE=1` y `TRANSFORMERS_OFFLINE=1` al bloque `ENV` de la etapa final | Cinturón de seguridad para rutas internas de las librerías que pudieran intentar red (p. ej. hilos en segundo plano durante `encode()`) |
+| **ChunksAndEmbeddings.py** | Se pasa `local_files_only` explícito al constructor de `SentenceTransformer` | Fuerza el uso exclusivo de la caché local en producción, sin verificación de red |
+| **app.py** | Versión mostrada en `/health` actualizada a **1.0.5** | Refleja la corrección aplicada |
+
+### Detalle del flag `local_files_only`
+
+Se establece con valor distinto por entorno, y queda explícito en cada rama de
+`Load_LanguageModel()`:
+
+| Entorno | `local_files_only` | Justificación |
+|---|---|---|
+| **DOCKER/PRODUCTION** | `True` | El modelo ya fue descargado durante el build del Dockerfile; se usa exclusivamente la caché local, sin verificación de red |
+| **DEVELOPMENT (local model)** | `False` | Es una ruta local real; el flag no aplica, se deja explícito por claridad |
+| **DEVELOPMENT (remote model)** | `False` | Permite la descarga inicial desde el Hub; en ejecuciones posteriores el modelo queda en caché |
+
+Adicionalmente, el log de arranque muestra el valor efectivo del flag para
+distinguir de un vistazo el valor usado.
 
 ---
 ## Prueba básica de creación de Embedding
