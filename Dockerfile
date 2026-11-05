@@ -30,7 +30,9 @@ FROM python:3.12-slim-bookworm
 
 # Actualizar pip/setuptools/wheel para eliminar CVEs de build tools
 # y eliminar el SBOM interno de pip que confunde a Trivy
-RUN pip install --upgrade pip==26.2.0 setuptools==84.1.0 wheel==0.46.2 \
+RUN apt-get update && apt-get upgrade -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --upgrade pip==26.2.0 setuptools==84.1.0 wheel==0.46.2 \
     && rm -f /usr/local/lib/python3.12/site-packages/pip/_vendor/bom.cdx.json
 
 # Crear usuario no privilegiado y directorios necesarios
